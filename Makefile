@@ -33,7 +33,7 @@ dist: clean
 
 .PHONY: install
 install: all
-	install -d ${DESTDIR}{${PREFIX}/bin,/usr/share/xsessions,${MANPREFIX}/man1}
+	install -d ${DESTDIR}${PREFIX}/bin ${DESTDIR}/usr/share/xsessions ${DESTDIR}${MANPREFIX}/man1
 	install -m  755 -s instantwm ${DESTDIR}${PREFIX}/bin/
 	install -Dm 755 instantwmctrl.sh ${DESTDIR}${PREFIX}/bin/instantwmctrl
 	ln -sf ${DESTDIR}${PREFIX}/bin/instantwmctrl ${DESTDIR}${PREFIX}/bin/instantwmctl
@@ -52,4 +52,3 @@ uninstall:
 		${DESTDIR}${PREFIX}/bin/startinstantos\
 		${DESTDIR}/usr/share/xsessions/instantwm.desktop\
 		${DESTDIR}/usr/share/xsessions/default.desktop
-
