@@ -37,7 +37,7 @@ int allclientcount()
 	Client *c;
 	n = 0;
 	for (c = selmon->clients; c; c = c->next) {
-		if (c == selmon->overlay)
+		if (c == selmon->overlay || HIDDEN(c))
 			continue;
 		n++;
 	}
@@ -48,7 +48,7 @@ int clientdistance(Client *c, Client *c2) {
 	int x, y, distance;
 	x = abs(((c->x + c->w) / 2) - ((c2->x + c->w) / 2));
 	y = abs(((c->y + c->h) / 2) - ((c2->y + c->h) / 2));
-	
+
 	distance = (sqrt(y*y+x*x));
 	return distance;
 
@@ -61,7 +61,7 @@ pushup(const Arg *arg) {
 	if (clientcount() < 2) {
 		return;
 	}
-	
+
 	if(!sel || (sel->isfloating && !arg->f))
 		return;
 	if((c = prevc(sel, arg->f))) {
@@ -89,7 +89,7 @@ static void
 pushdown(const Arg *arg) {
 	Client *sel = selmon->sel;
 	Client *c;
-	
+
 	if (clientcount() < 2) {
 		return;
 	}

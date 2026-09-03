@@ -219,50 +219,72 @@ focusstack2(const Arg *arg)
 void
 overviewlayout(Monitor *m)
 {
-	int n;
-	int gridwidth;
-	unsigned int colwidth;
-	unsigned int lineheight;
-	int tmpx;
-	int tmpy;
+	int n, cols, rows;
+	int i = 0;
+	int x, y;
+	int top, height;
+	int w, h;
+	unsigned int cellw, cellh;
 	Client *c;
 	XWindowChanges wc;
+
 	n = allclientcount();
 
 	if (n == 0)
 		return;
 
-	gridwidth = 1;
+	cols = 1;
+	while (cols * cols < n)
+		cols++;
 
-	while ((gridwidth * gridwidth) < n) {
-		gridwidth++;
-	}
+	rows = (n + cols - 1) / cols;
 
-	tmpx = selmon->mx;
-	tmpy = selmon->my + (selmon->showbar ? bh : 0);
-	lineheight = selmon->wh / gridwidth;
-	colwidth = selmon->ww / gridwidth;
+	top = m->my + (m->showbar ? bh : 0);
+	height = m->mh - (m->showbar ? bh : 0);
+
+	if (height <= 0)
+		return;
+
+	cellw = m->mw / cols;
+	cellh = height / rows;
+
 	wc.stack_mode = Above;
 	wc.sibling = m->barwin;
 
-	for(c = m->clients; c; c = c->next) {
-        if (HIDDEN(c))
-            continue;
-		if (c == selmon->overlay)
+	for (c = m->clients; c; c = c->next) {
+		if (HIDDEN(c))
 			continue;
+
+		if (c == m->overlay)
+			continue;
+
 		if (c->isfloating)
 			savefloating(c);
-		resize(c,tmpx, tmpy, c->w, c->h, 0);
 
-		XConfigureWindow(dpy, c->win, CWSibling|CWStackMode, &wc);
+		x = m->mx + (i % cols) * cellw;
+		y = top + (i / cols) * cellh;
+
+    w = cellw - 2 * c->bw;
+    h = cellh - 2 * c->bw;
+
+    if (w < 1)
+      w = 1;
+    if (h < 1)
+      h = 1;
+
+    resizeclient(c, x, y, w, h);
+
+		XConfigureWindow(dpy, c->win,
+			CWSibling | CWStackMode, &wc);
+
 		wc.sibling = c->win;
-		if (tmpx + colwidth < selmon->mx + selmon->ww) {
-			tmpx += colwidth;
-		} else {
-			tmpx = selmon->mx;
-			tmpy += lineheight;
-		}
+
+		i++;
 	}
+
+	if (m->showbar && m->barwin)
+		XRaiseWindow(dpy, m->barwin);
+
 	XSync(dpy, False);
 }
 
