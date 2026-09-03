@@ -413,7 +413,7 @@ static Xcommand commands[] = {
 	{ "focusnmon",              focusnmon,                    {.i = 0}, 5 },
 	{ "nametag",                nametag,                      {.v = "tag" }, 4 },
 	{ "resetnametag",           resetnametag,                 {0}, 0 },
-	{ "layerkeyd",              setlayerkeyd,                 { .v =  NULL  }, 4 },
+	{ "keydlayer",              setkeydlayer,                 { .v =  NULL  }, 4 },
 };
 
 static const Key dkeys[] = {

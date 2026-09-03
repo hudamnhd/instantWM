@@ -327,7 +327,7 @@ void togglealttag(const Arg *arg);
 void alttabfree(const Arg *arg);
 void toggleanimated(const Arg *arg);
 void setborderwidth(const Arg *arg);
-void setlayerkeyd(const Arg *arg);
+void setkeydlayer(const Arg *arg);
 void togglefocusfollowsmouse(const Arg *arg);
 void togglefocusfollowsfloatmouse(const Arg *arg);
 void toggledoubledraw(const Arg *arg);

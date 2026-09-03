@@ -1786,23 +1786,27 @@ void drawbar(Monitor *m) {
             // render shutdown button
             drw_text(drw, x, 0, bh, bh, lrpad / 2, "", 0, 0);
             // display help message if no application is opened
+            char title[256];
+
             if (!selmon->clients) {
-                int titlewidth =
-                    TEXTW("Press space to launch an application") < m->btw
-                        ? TEXTW("Press space to launch an application")
-                        : (m->btw - bh);
-                drw_text(drw, x + bh + ((m->btw - bh) - titlewidth + 1) / 2, 0,
-                         titlewidth, bh, 0,
-                         "Press space to launch an application", 0, 0);
+                if (keydlayer[0])
+                    snprintf(title, sizeof(title),
+                             "[%.32s] Press space to launch an application",
+                             keydlayer);
+                else
+                    snprintf(title, sizeof(title),
+                             "Press space to launch an application");
             } else {
-                int titlewidth =
-                    TEXTW(keydlayer) < m->btw
-                        ? TEXTW(keydlayer)
-                        : (m->btw - bh);
-                drw_text(drw, x + bh + ((m->btw - bh) - titlewidth + 1) / 2, 0,
-                         titlewidth, bh, 0,
-                         keydlayer, 0, 0);
+                if (keydlayer[0])
+                    snprintf(title, sizeof(title), "[%.32s]", keydlayer);
+                else
+                    title[0] = '\0';
             }
+
+            int titlewidth = TEXTW(title) < m->btw ? TEXTW(title) : (m->btw - bh);
+
+            drw_text(drw, x + bh + ((m->btw - bh) - titlewidth + 1) / 2, 0,
+                     titlewidth, bh, 0, title, 0, 0);
         }
     }
 
@@ -4984,7 +4988,7 @@ void setborderwidth(const Arg *arg) {
     resize(c, c->x, c->y, c->w + 2 * d, c->h + 2 * d, 0);
 }
 
-void setlayerkeyd(const Arg *arg) {
+void setkeydlayer(const Arg *arg) {
 	if (!arg->v)
 		return;
 
