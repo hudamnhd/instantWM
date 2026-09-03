@@ -1,22 +1,20 @@
 /* See LICENSE file for copyright and license details. */
-#include <X11/XF86keysym.h>
 #include "instantwm.h"
 
 /* appearance */
-static const unsigned int borderpx = 3;		  /* border pixel of windows */
-static const unsigned int snap = 32;		  /* snap pixel */
-static const unsigned int startmenusize = 30;		  /* snap pixel */
-static const unsigned int systraypinning = 0; /* 0: sloppy systray follows selected monitor, >0: pin systray to monitor X */
-static const unsigned int systrayspacing = 0; /* systray spacing */
-static const int systraypinningfailfirst = 1; /* 1: if pinning fails, display systray on the first monitor, False: display systray on the last monitor*/
-static const int showsystray = 1;			  /* 0 means no systray */
-static const int showbar = 1;				  /* 0 means no bar */
-static const int topbar = 1;				  /* 0 means bottom bar */
-static const char *fonts[] = {"Inter-Regular:size=12", "Fira Code Nerd Font:size=12"};
+static const unsigned int borderpx       = 3;  /* border pixel of windows */
+static const unsigned int snap           = 32; /* snap pixel */
+static const unsigned int startmenusize  = 30; /* snap pixel */
+static const unsigned int systraypinning = 0;  /* 0: sloppy systray follows selected monitor, >0: pin systray to monitor X */
+static const unsigned int systrayspacing = 0;  /* systray spacing */
+static const int systraypinningfailfirst = 1;  /* 1: if pinning fails, display systray on the first monitor, False: display systray on the last monitor*/
+static const int showsystray             = 1;  /* 0 means no systray */
+static const int showbar                 = 1;  /* 0 means no bar */
+static const int topbar                  = 1;  /* 0 means bottom bar */
+static const char *fonts[]               = {"JetBrainsMonoNL Nerd Font:style=Medium:size=10", "FiraCode Nerd Font:size=10"};
 
 static int barheight;
 static char xresourcesfont[30];
-
 
 static char col_bg[] = "#121212";
 static char col_text[] = "#DFDFDF";
@@ -30,7 +28,6 @@ static char col_light_blue[] = "#89B3F7";
 static char col_light_blue_hover[] = "#a1c2f9";
 static char col_blue[] = "#536DFE";
 static char col_blue_hover[] = "#758afe";
-
 
 static char col_light_green[] = "#81c995";
 static char col_light_green_hover[] = "#99d3aa";
@@ -188,26 +185,26 @@ static const char *closebuttoncolors[2][3][3] = {
             [ColFg] = col_text,
             [ColBg] = col_light_red,
             [ColDetail] = col_red,
-        }, 
+        },
         [ SchemeCloseLocked ] = {
-            [ ColFg ] = col_text, 
+            [ ColFg ] = col_text,
             [ ColBg ] = col_light_yellow,
             [ ColDetail ] = col_yellow
-        }, 
+        },
         [ SchemeCloseFullscreen ] = {
             [ColFg] = col_text,
             [ColBg] = col_light_red,
             [ColDetail] = col_red,
-        }, 
-    }, 
+        },
+    },
     [ SchemeHover ] = {
         [ SchemeCloseNormal ] = {
             [ColFg] = col_text,
             [ColBg] = col_light_red_hover,
             [ColDetail] = col_red_hover,
-        }, 
+        },
         [ SchemeCloseLocked ] = {
-            [ ColFg ] = col_text, 
+            [ ColFg ] = col_text,
             [ ColBg ] = col_light_yellow_hover,
             [ ColDetail ] = col_yellow_hover
         },
@@ -215,7 +212,7 @@ static const char *closebuttoncolors[2][3][3] = {
             [ColFg] = col_text,
             [ColBg] = col_light_red_hover,
             [ColDetail] = col_red_hover,
-        }, 
+        },
     }
 };
 
@@ -233,7 +230,7 @@ static const char *statusbarcolors[] = {
 };
 
 SchemePref schemehovertypes[] = {
-    { "hover", SchemeHover }, 
+    { "hover", SchemeHover },
     { "nohover", SchemeNoHover }
 };
 
@@ -270,19 +267,15 @@ SchemePref schemecolortypes[] = {
 
 /* tagging */
 #define MAX_TAGLEN 16
-static const char *tags_default[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "s"};
-static char tags[][MAX_TAGLEN] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "s" };
+static const char *tags_default[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static char tags[][MAX_TAGLEN] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 /* ffox, programming1, term, music, steam, folder, play icon, document, message  */
-static const char *tagsalt[] = { "", "{}", "$", "", "", "", "", "", "" };
+static const char *tagsalt[] = { "", "", "", "", "", "", "", "󰈙", "" };
 
 static const char scratchpadname[] = "instantscratchpad";
-
-static const char *upvol[] = {"/usr/share/instantassist/utils/p.sh", "+", NULL};
-static const char *downvol[] = {"/usr/share/instantassist/utils/p.sh", "-", NULL};
-static const char *mutevol[] = {"/usr/share/instantassist/utils/p.sh", "m", NULL};
-
-static const char *upbright[] = {"/usr/share/instantassist/utils/b.sh", "+", NULL};
-static const char *downbright[] = {"/usr/share/instantassist/utils/b.sh", "-", NULL};
+static const char *downvol[] = {"pactl", "set-sink-volume", "@DEFAULT_SINK@", "-10%", NULL};
+static const char *upvol[] = {"pactl", "set-sink-volume", "@DEFAULT_SINK@", "+10%", NULL};
+static const char *mutevol[] = {"pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle ", NULL};
 
 static const Rule rules[] = {
 	/* xprop(1):
@@ -307,17 +300,17 @@ static const Rule rules[] = {
 };
 
 /* layout(s) */
-static const float mfact = 0.55;  /* factor of master area size [0.05..0.95] */
-static const int nmaster = 1;	 /* number of clients in master area */
-static const int resizehints = 1; /* 1 means respect size hints in tiled resizals */
+static const float mfact = 0.55;     /* factor of master area size [0.05..0.95] */
+static const int nmaster = 1;        /* number of clients in master area */
+static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
 static const int decorhints  = 1;    /* 1 means respect decoration hints */
 
 static const Layout layouts[] = {
 	/* symbol     arrange function */
-	{ "+",        tile },    /* first entry is default */
-	{ "#",        grid },
-	{ "-",        NULL },    /* no layout function means floating behavior */
+	{ "[]=",      tile },    /* first entry is default */
+	{ "><>",      NULL },    /* no layout function means floating behavior */
 	{ "[M]",      monocle },
+	{ "HHH",      grid },
 	{ "|||",      tcl },
 	{ "H[]",      deck },
 	{ "O",        overviewlayout },
@@ -328,78 +321,41 @@ static const Layout layouts[] = {
 
 /* key definitions */
 #define MODKEY Mod4Mask
-#define TAGKEYS(KEY, TAG)                                          \
-		{MODKEY, KEY, view, {.ui = 1 << TAG}},                     \
-		{MODKEY|ControlMask, KEY, toggleview, {.ui = 1 << TAG}}, \
-		{MODKEY|ShiftMask, KEY, tag, {.ui = 1 << TAG}},          \
-		{MODKEY|Mod1Mask, KEY, followtag, {.ui = 1 << TAG}},          \
-		{MODKEY|ControlMask|ShiftMask, KEY, toggletag, {.ui = 1 << TAG}}, \
-		{MODKEY|Mod1Mask|ShiftMask, KEY, swaptags, {.ui = 1 << TAG}},
+#define TAGKEYS(KEY, TAG)                                               \
+		{ MODKEY,                       KEY, view,       {.ui = 1 << TAG} }, \
+		{ MODKEY|ControlMask,           KEY, toggleview, {.ui = 1 << TAG} }, \
+		{ MODKEY|ShiftMask,             KEY, tag,        {.ui = 1 << TAG} }, \
+		{ MODKEY|Mod1Mask,              KEY, followtag,  {.ui = 1 << TAG} }, \
+		{ MODKEY|ControlMask|ShiftMask, KEY, toggletag,  {.ui = 1 << TAG} }, \
+		{ MODKEY|Mod1Mask|ShiftMask,    KEY, swaptags,   {.ui = 1 << TAG} },
 
 
 #define SHCMD(cmd)                                           \
-	{                                                        \
-		.v = (const char *[]) { "/bin/sh", "-c", cmd, NULL } \
+	{                                                          \
+		.v = (const char *[]) { "/bin/sh", "-c", cmd, NULL }     \
 	}
 
 /* commands */
 static char instantmenumon[2] = "0"; /* component of instantmenucmd, manipulated in spawn() */
-static const char *instantmenucmd[] = {"instantmenu_run", NULL};
-static const char *clipmenucmd[] = {"instantclipmenu", NULL};
-static const char *smartcmd[] = {"instantmenu_smartrun", NULL};
-static const char *instantmenustcmd[] = {"instantmenu_run_st", NULL};
-static const char *termcmd[] = {".config/instantos/default/terminal", NULL};
-static const char *termscratchcmd[] = {".config/instantos/default/terminal", "-c", scratchpadname, NULL};
-static const char *quickmenucmd[] = {"quickmenu", NULL};
-static const char *instantassistcmd[] = {"instantassist", NULL};
-static const char *instantrepeatcmd[] = {"instantrepeat", NULL};
-static const char *instantpacmancmd[] = {"instantpacman", NULL};
-static const char *instantsharecmd[] = {"instantshare", "snap", NULL};
-static const char *nautiluscmd[] = {".config/instantos/default/filemanager", NULL};
-static const char *slockcmd[] = {".config/instantos/default/lockscreen", NULL};
-static const char *onekeylock[] = {"ilock", "-o", NULL};
-static const char *langswitchcmd[] = {"ilayout", NULL};
-static const char *oslockcmd[] = {"instantlock", "-o", NULL};
-static const char *helpcmd[] = {"instanthotkeys", "gui", NULL};
-static const char *searchcmd[] = {"instantsearch", NULL};
-static const char *keylayoutswitchcmd[] = {"instantkeyswitch", NULL};
-static const char *iswitchcmd[] = {"iswitch", NULL};
-static const char *instantswitchcmd[] = {"rofi", "-show", "window", "-kb-row-down", "Alt+Tab,Down", "-kb-row-up", "Alt+Ctrl+Tab,Up", "-kb-accept-entry", "!Alt_L,!Alt+Tab,Return", "-me-select-entry", "", "-me-accept-entry", "MousePrimary", NULL};
-static const char *caretinstantswitchcmd[] = {"rofi", "-show", "window", "-kb-row-down", "Alt+Tab,Down", "-kb-row-up", "Alt+Ctrl+Tab,Up", "-kb-accept-entry", "!Alt_L,!Alt+Tab,Return", "-me-select-entry", "", "-me-accept-entry", "MousePrimary", "-theme", "/usr/share/instantdotfiles/rootconfig/rofi/appmenu.rasi", NULL};
-static const char *instantskippycmd[] = {"instantskippy", NULL};
-static const char *onboardcmd[] = {"onboard", NULL};
-static const char *instantshutdowncmd[] = {"instantshutdown", NULL};
-static const char *systemmonitorcmd[] = {".config/instantos/default/systemmonitor", NULL};
-static const char *notifycmd[] = {"instantnotify", NULL};
-static const char *rangercmd[] = { ".config/instantos/default/termfilemanager", NULL };
-static const char *panther[] = { ".config/instantos/default/appmenu", NULL};
-static const char *controlcentercmd[] = { "instantsettings", NULL};
-static const char *displaycmd[] = { "instantdisper", NULL};
-static const char *pavucontrol[] = { "pavucontrol", NULL};
-static const char *instantsettings[] = { "instantsettings", NULL};
-// static const char  *clickcmd[] = { "autoclicker", NULL };
-static const char  *codecmd[] = { "instantutils open graphicaleditor", NULL };
-static const char  *startmenucmd[] = { "instantstartmenu", NULL };
-
-static const char  *scrotcmd[] = { "/usr/share/instantassist/assists/s/s.sh", NULL };
-static const char  *fscrotcmd[] = { "/usr/share/instantassist/assists/s/m.sh", NULL };
-static const char  *clipscrotcmd[] = { "/usr/share/instantassist/assists/s/c.sh", NULL };
-static const char  *fclipscrotcmd[] = { "/usr/share/instantassist/assists/s/f.sh", NULL };
-
-static const char  *firefoxcmd[] = { ".config/instantos/default/browser", NULL };
-static const char  *editorcmd[] = { ".config/instantos/default/editor", NULL };
-
-static const char *playernext[] = { "playerctl", "next", NULL};
-static const char *playerprevious[] = { "playerctl", "previous", NULL};
-static const char *playerpause[] = { "playerctl", "play-pause", NULL};
-static const char *spoticli[] = { "spoticli", "m", NULL};
+static const char *instantmenucmd[]     = {"instantmenu_run", NULL};
+static const char *instantkeybindscmd[] = {"rofi-custom", "dwmkeybinds", NULL};
+static const char *instantshutdowncmd[] = {"rofi-custom", "power", NULL};
+static const char *instantswitchcmd[]   = {"rofi-custom", "window", NULL};
+static const char *iswitchcmd[]         = {"iswitch", NULL};
+static const char *notifycmd[]          = {"instantnotify", NULL};
+static const char *onboardcmd[]         = {"onboard", NULL};
+static const char *pcmanfm[]            = {"pcmanfm", NULL};
+static const char *quickmenucmd[]       = {"rofi-custom", NULL};
+static const char *screenshotcmd[]      = {"rofi-custom", "screenshot", NULL};
+static const char *startmenucmd[]       = {"rofi-custom", "app", NULL};
+static const char *termcmd[]            = {"st", NULL};
+static const char *termscratchcmd[]     = {"st", "-c", scratchpadname, NULL};
 
 #include "push.c"
 
 ResourcePref resources[] = {
     { "barheight",        INTEGER, &barheight },
     { "font",             STRING,  &xresourcesfont },
-
     // set tag labels
     { "tag1",             STRING,  &tags[0] },
     { "tag2",             STRING,  &tags[1] },
@@ -410,7 +366,6 @@ ResourcePref resources[] = {
     { "tag7",             STRING,  &tags[6] },
     { "tag8",             STRING,  &tags[7] },
     { "tag9",             STRING,  &tags[8] },
-
 };
 
 // instantwmctrl commands
@@ -423,189 +378,160 @@ static Xcommand commands[] = {
     // 3  tag number (bitmask)
     // 4  string
     // 5  integer
-	{ "overlay",                setoverlay,                   {0},         0 },
-	{ "warpfocus",              warpfocus,                   {0},         0 },
-	{ "tag",                    view,                         { .ui = 2 }, 3 },
-	{ "animated",               toggleanimated,               { .ui = 2 }, 1 },
-	{ "border",                 setborderwidth,               { .i =  borderpx  }, 5 },
-	{ "focusfollowsmouse",      togglefocusfollowsmouse,      { .ui = 2 }, 1 },
-	{ "focusfollowsfloatmouse", togglefocusfollowsfloatmouse, { .ui = 2 }, 1 },
-	{ "alttab",                 alttabfree,                   { .ui = 2 }, 1 },
-	{ "layout",                 commandlayout,                { .ui = 0 }, 1 },
-	{ "prefix",                 commandprefix,                { .ui = 1 }, 1 },
-	{ "alttag",                 togglealttag,                 { .ui = 0 }, 1 },
-	{ "hidetags",               toggleshowtags,               { .ui = 0 }, 1 },
-	{ "specialnext",            setspecialnext,               { .ui = 0 }, 3 },
-	{ "tagmon",                 tagmon,                       { .i = +1 }, 0 },
-	{ "followmon",              followmon,                    { .i = +1 }, 0 },
-	{ "focusmon",               focusmon,                     { .i = +1 }, 0 },
-	{ "focusnmon",               focusnmon,                   { .i = 0 }, 5 },
-	{ "nametag",                nametag,                      { .v = "tag" }, 4 },
+	{ "overlay",                setoverlay,                   {0}, 0 },
+	{ "warpfocus",              warpfocus,                    {0}, 0 },
+	{ "tag",                    view,                         {.ui = 2 }, 3 },
+	{ "animated",               toggleanimated,               {.ui = 2 }, 1 },
+	{ "border",                 setborderwidth,               {.i =  borderpx }, 5 },
+	{ "focusfollowsmouse",      togglefocusfollowsmouse,      {.ui = 2 }, 1 },
+	{ "focusfollowsfloatmouse", togglefocusfollowsfloatmouse, {.ui = 2 }, 1 },
+	{ "alttab",                 alttabfree,                   {.ui = 2 }, 1 },
+	{ "layout",                 commandlayout,                {.ui = 0}, 1 },
+	{ "alttag",                 togglealttag,                 {.ui = 0}, 1 },
+	{ "hidetags",               toggleshowtags,               {.ui = 0}, 1 },
+	{ "specialnext",            setspecialnext,               {.ui = 0}, 3 },
+	{ "tagmon",                 tagmon,                       {.i = +1}, 0 },
+	{ "followmon",              followmon,                    {.i = +1}, 0 },
+	{ "focusmon",               focusmon,                     {.i = +1}, 0 },
+	{ "focusnmon",              focusnmon,                   {.i = 0}, 5 },
+	{ "nametag",                nametag,                      {.v = "tag" }, 4 },
 	{ "resetnametag",           resetnametag,                 {0}, 0 },
 };
 
 static const Key dkeys[] = {
 	/* modifier  key        function     argument */
-	{0,          XK_r,      spawn,       {.v = rangercmd } },
-	{0,          XK_e,      spawn,       {.v = editorcmd } },
-	{0,          XK_n,      spawn,       {.v = nautiluscmd } },
-	{0,          XK_space,  spawn,       {.v = panther} },
-	{0,          XK_f,      spawn,       {.v = firefoxcmd} },
-	{0,          XK_a,      spawn,       {.v = instantassistcmd} },
-	{0,          XK_F1,     spawn,       {.v = helpcmd} },
-	{0,          XK_m,      spawn,       {.v = spoticli} },
-	{0,          XK_Return, spawn,       {.v = termcmd} },
+  {0,          XK_space,  spawn,       {.v = startmenucmd} },
+	{0,          XK_q,      spawn,       {.v = instantshutdowncmd} },
+	{0,          XK_p,      spawn,       {.v = pcmanfm} },
+	{0,          XK_t,      spawn,       {.v = termcmd} },
+	{0,          XK_s,      spawn,       {.v = instantswitchcmd} },
 	{0,          XK_plus,   spawn,       {.v = upvol} },
 	{0,          XK_minus,  spawn,       {.v = downvol} },
-	{0,          XK_Tab,    spawn,       {.v = caretinstantswitchcmd} },
-	{0,          XK_c,      spawn,       {.v = codecmd} },
-	{0,          XK_y,      spawn,       {.v = smartcmd} },
-	{0,          XK_v,      spawn,       {.v = quickmenucmd} },
+	{0,          XK_equal,  spawn,       {.v = mutevol} },
 
-	{0,          XK_h,      viewtoleft,  {0}},
-	{0,          XK_l,      viewtoright, {0}},
-	{0,          XK_k,      shiftview,   {.i = +1 } },
-	{0,          XK_j,      shiftview,   {.i = -1 } },
+	{0,          XK_Left,   viewtoleft,  {0} },
+	{0,          XK_Right,  viewtoright, {0} },
+	{0,          XK_Up,     shiftview,   {.i = +1} },
+	{0,          XK_Down,   shiftview,   {.i = -1} },
 
-	{0,          XK_Left,   viewtoleft,  {0}},
-	{0,          XK_Right,  viewtoright, {0}},
-	{0,          XK_Up,     shiftview,   {.i = +1 } },
-	{0,          XK_Down,   shiftview,   {.i = -1 } },
-
-	{0,          XK_1,      view,        {.ui = 1 << 0}},
-	{0,          XK_2,      view,        {.ui = 1 << 1}},
-	{0,          XK_3,      view,        {.ui = 1 << 2}},
-	{0,          XK_4,      view,        {.ui = 1 << 3}},
-	{0,          XK_5,      view,        {.ui = 1 << 4}},
-	{0,          XK_6,      view,        {.ui = 1 << 5}},
-	{0,          XK_7,      view,        {.ui = 1 << 6}},
-	{0,          XK_8,      view,        {.ui = 1 << 7}},
-	{0,          XK_9,      view,        {.ui = 1 << 8}},
+	{0,          XK_1,      view,        {.ui = 1 << 0} },
+	{0,          XK_2,      view,        {.ui = 1 << 1} },
+	{0,          XK_3,      view,        {.ui = 1 << 2} },
+	{0,          XK_4,      view,        {.ui = 1 << 3} },
+	{0,          XK_5,      view,        {.ui = 1 << 4} },
+	{0,          XK_6,      view,        {.ui = 1 << 5} },
+	{0,          XK_7,      view,        {.ui = 1 << 6} },
+	{0,          XK_8,      view,        {.ui = 1 << 7} },
+	{0,          XK_9,      view,        {.ui = 1 << 8} },
 
 };
 
 static Key keys[] = {
-	/* modifier                             key                 function              argument */
+	/* modifier                     key            function                  argument */
+	{ MODKEY,                       XK_Up,           upkey,                  {.i = -1} },
+	{ MODKEY|Mod1Mask,              XK_Up,           directionfocus,         {.ui = 0} },
+	{ MODKEY|ShiftMask,             XK_Up,           uppress,                {0} },
+	{ MODKEY|ControlMask,           XK_Up,           pushup,                 {0} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_Up,           moveresize,             {.i = 1} },
+  { MODKEY|ShiftMask|ControlMask, XK_Up,           keyresize,              {.i = 1} },
+	{ MODKEY,                       XK_Down,         downkey,                {.i = +1} },
+	{ MODKEY|Mod1Mask,              XK_Down,         directionfocus,         {.ui = 2 } },
+	{ MODKEY|ShiftMask,             XK_Down,         downpress,              {0} },
+	{ MODKEY|ControlMask,           XK_Down,         pushdown,               {0} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_Down,         moveresize,             {.i = 0} },
+  { MODKEY|ShiftMask|ControlMask, XK_Down,         keyresize,              {.i = 0} },
+	{ MODKEY,                       XK_Left,         animleft,               {0} },
+	{ MODKEY|Mod1Mask,              XK_Left,         moveleft,               {0} },
+	{ MODKEY|ShiftMask,             XK_Left,         tagtoleft,              {0} },
+	{ MODKEY|Mod1Mask,              XK_Left,         directionfocus,         {.ui = 3 } },
+	{ MODKEY|ControlMask,           XK_Left,         shiftview,              {.i = -1} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_Left,         moveresize,             {.i = 3} },
+  { MODKEY|ShiftMask|ControlMask, XK_Left,         keyresize,              {.i = 3} },
+	{ MODKEY,                       XK_Right,        animright,              {0} },
+	{ MODKEY|Mod1Mask,              XK_Right,        moveright,              {0} },
+	{ MODKEY|ShiftMask,             XK_Right,        tagtoright,             {0} },
+	{ MODKEY|Mod1Mask,              XK_Right,        directionfocus,         {.ui = 1} },
+	{ MODKEY|ControlMask,           XK_Right,        shiftview,              {.i = +1} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_Right,        moveresize,             {.i = 2} },
+  { MODKEY|ShiftMask|ControlMask, XK_Right,        keyresize,              {.i = 2} },
+	{ MODKEY,                       XK_Home,         setmfact,               {.f = -0.05} },
+	{ MODKEY|Mod1Mask,              XK_Home,         incnmaster,             {.i = -1} },
+	{ MODKEY|ShiftMask,             XK_Home,         incnmaster,             {.i = -1} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_Home,         moveresize,             {.i = 1} },
+  { MODKEY|ShiftMask|ControlMask, XK_Home,         keyresize,              {.i = 1} },
+  { MODKEY,                       XK_End,          setmfact,               {.f = +0.05} },
+	{ MODKEY|Mod1Mask,              XK_End,          incnmaster,             {.i = +1} },
+	{ MODKEY|ShiftMask,             XK_End,          incnmaster,             {.i = +1} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_End,          moveresize,             {.i = 1} },
+  { MODKEY|ShiftMask|ControlMask, XK_End,          keyresize,              {.i = 1} },
+	{ MODKEY,                       XK_Prior,        focusstack,             {.i = -1} },
+	{ MODKEY,                       XK_Next,         focusstack,             {.i = +1} },
+	{ MODKEY,                       XK_Return,       spawn,                  {.v = termcmd} },
+	{ MODKEY|Mod1Mask,              XK_Return,       togglefakefullscreen,   {0} },
+	{ MODKEY|ShiftMask,             XK_Return,       zoom,                   {0} },
+  { MODKEY|ControlMask,           XK_Return,       tempfullscreen,         {0} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_Return,       distributeclients,      {0} },
+	{ MODKEY|ShiftMask|ControlMask, XK_Return,       centerwindow,           {0} },
+	{ MODKEY,                       XK_Tab,          lastview,               {0} },
+	{ MODKEY|Mod1Mask,              XK_Tab,          spawn,                  {.v = iswitchcmd} },
+	{ MODKEY|ShiftMask,             XK_Tab,          followview,             {0} },
+	{ MODKEY|ControlMask,           XK_Tab,          focuslastclient,        {0} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_Tab,          alttabfree,             {0} },
+	{ MODKEY|ShiftMask|ControlMask, XK_Tab,          desktopset,             {0} },
+  { MODKEY,                       XK_space,        spacetoggle,            {0} },
+  { MODKEY|ShiftMask,             XK_space,        togglefloating,         {0} },
 
-	{MODKEY|Mod1Mask,                       XK_j,               keyresize,            {.i = 0}},
-	{MODKEY|Mod1Mask,                       XK_k,               keyresize,            {.i = 1}},
-	{MODKEY|Mod1Mask,                       XK_l,               keyresize,            {.i = 2}},
-	{MODKEY|Mod1Mask,                       XK_h,               keyresize,            {.i = 3}},
-	{MODKEY|ControlMask,                    XK_d,               distributeclients,    {0}},
-	{MODKEY|ShiftMask,                      XK_d,               drawwindow,           {0}},
-	{MODKEY|ShiftMask,                      XK_Escape,          spawn,                {.v = systemmonitorcmd}},
-
-	{MODKEY,                                XK_r,               spawn,                {.v = rangercmd } },
-	{MODKEY|ControlMask|Mod1Mask,           XK_r,               redrawwin,            {0} },
-	{MODKEY,                                XK_n,               spawn,                {.v = nautiluscmd } },
-	{MODKEY|ControlMask,                    XK_q,               spawn,                {.v = instantshutdowncmd } },
-	{MODKEY,                                XK_y,               spawn,                {.v = panther} },
-	{MODKEY,                                XK_a,               spawn,                {.v = instantassistcmd} },
-	{MODKEY|ShiftMask,                      XK_a,               spawn,                {.v = instantrepeatcmd} },
-	{MODKEY|ControlMask,                    XK_i,               spawn,                {.v = instantpacmancmd} },
-	{MODKEY|ShiftMask,                      XK_i,               spawn,                {.v = instantsharecmd} },
-	{MODKEY,                                XK_w,               setoverlay,           {0} },
-	{MODKEY|ControlMask,                    XK_w,               createoverlay,        {0} },
-	{MODKEY,                                XK_g,               spawn,                {.v = notifycmd} },
-	{MODKEY|ControlMask,                    XK_space,           spawn,                {.v = instantmenucmd}},
-	{MODKEY|ShiftMask,                      XK_v,               spawn,                {.v = clipmenucmd}},
-	{MODKEY,                                XK_space,           spawn,                {.v = smartcmd}},
-	{MODKEY,                                XK_minus,           spawn,                {.v = instantmenustcmd}},
-	{MODKEY,                                XK_x,               spawn,                {.v = instantswitchcmd}},
-	{Mod1Mask,                              XK_Tab,             spawn,                {.v = iswitchcmd}},
-	{MODKEY|Mod1Mask|ControlMask|ShiftMask, XK_Tab,             alttabfree,           {0}},
-	{MODKEY,                                XK_dead_circumflex, spawn,                {.v = caretinstantswitchcmd}},
-	{MODKEY|ControlMask,                    XK_l,               spawn,                {.v = slockcmd}},
-	{MODKEY|ControlMask|ShiftMask,          XK_l,               spawn,                {.v = onekeylock}},
-	{MODKEY|ControlMask,                    XK_h,               hidewin,              {0}},
-	{MODKEY|Mod1Mask|ControlMask,           XK_h,               unhideall,            {0}},
-	{MODKEY|Mod1Mask|ControlMask,           XK_l,               spawn,                {.v = langswitchcmd}},
-	{MODKEY,                                XK_Return,          spawn,                {.v = termcmd}},
-	{MODKEY,                                XK_v,               spawn,                {.v = quickmenucmd}},
-	{MODKEY,                                XK_b,               togglebar,            {0}},
-	{MODKEY,                                XK_j,               focusstack,           {.i = +1}},
-	{MODKEY,                                XK_Down,            downkey,              {.i = +1}},
-	{MODKEY|ShiftMask,                      XK_Down,            downpress,            {0}},
-	{MODKEY,                                XK_k,               focusstack,           {.i = -1}},
-	{MODKEY,                                XK_Up,              upkey,                {.i = -1}},
-	{MODKEY|ShiftMask,                      XK_Up,              uppress,              {0}},
-	{MODKEY|ControlMask,                    XK_j,               pushdown,             {0} },
-	{MODKEY|ControlMask,                    XK_k,               pushup,               {0} },
-	{MODKEY|Mod1Mask,                       XK_s,               togglealttag,         { .ui = 2 } },
-	{MODKEY|ShiftMask|Mod1Mask,             XK_s,               toggleanimated,       { .ui = 2 } },
-	{MODKEY|ControlMask,                    XK_s,               togglesticky,         {0} },
-	{MODKEY|ShiftMask,                      XK_s,               createscratchpad,     {0}},
-	{MODKEY,                                XK_s,               togglescratchpad,     {0}},
-	{MODKEY|ShiftMask,                      XK_f,               togglefakefullscreen, {0} },
-	{MODKEY|ControlMask,                    XK_f,               tempfullscreen,       {0} },
-	{MODKEY|Mod1Mask,                       XK_f,               spawn,                { .v = searchcmd } },
-	{MODKEY|Mod1Mask,                       XK_space,           spawn,                { .v = keylayoutswitchcmd } },
-	{MODKEY|ShiftMask|Mod1Mask,             XK_d,               toggledoubledraw,     {0} },
-	{MODKEY|ShiftMask,                      XK_w,               warpfocus,            {0} },
-	{MODKEY|Mod1Mask,                       XK_w,               centerwindow,         {0} },
-	{MODKEY|ShiftMask|ControlMask,          XK_s,               toggleshowtags,       { .ui = 2 } },
-	{MODKEY,                                XK_i,               incnmaster,           {.i = +1}},
-	{MODKEY,                                XK_d,               incnmaster,           {.i = -1}},
-	{MODKEY,                                XK_h,               setmfact,             {.f = -0.05}},
-	{MODKEY,                                XK_l,               setmfact,             {.f = +0.05}},
-	{MODKEY|ShiftMask,                      XK_Return,          zoom,                 {0}},
-	{MODKEY,                                XK_Tab,             lastview,             {0}},
-	{MODKEY|ShiftMask,                      XK_Tab,             focuslastclient,      {0}},
-	{MODKEY|Mod1Mask,                       XK_Tab,             followview,           {0}},
-	{MODKEY,                                XK_q,               shutkill,             {0}},
-	{Mod1Mask,                              XK_F4,              killclient,           {0}},
-	{MODKEY,                                XK_F1,              spawn,                {.v = helpcmd}},
-	{MODKEY,                                XK_F2,              toggleprefix,         {0}},
-	{MODKEY,                                XK_t,               setlayout,            {.v = &layouts[0]}},
-	{MODKEY,                                XK_f,               setlayout,            {.v = &layouts[2]}},
-	{MODKEY,                                XK_m,               setlayout,            {.v = &layouts[3]}},
-	{MODKEY|ShiftMask,                      XK_m,               movemouse,            {0}},
-	{MODKEY|Mod1Mask,                       XK_m,               resizemouse,          {0}},
-	{MODKEY,                                XK_c,               setlayout,            {.v = &layouts[1]}},
-	{MODKEY|ControlMask,                    XK_c,               spawn,                {.v = controlcentercmd}},
-
-	{MODKEY,                                XK_Left,            animleft,             {0}},
-	{MODKEY,                                XK_Right,           animright,            {0}},
-
-	{MODKEY,                                XK_e,               overtoggle,           {.ui = ~0}},
-	{MODKEY|ShiftMask,                      XK_e,               fullovertoggle,       {.ui = ~0}},
-	{MODKEY|ControlMask,                      XK_e,               spawn,                {.v = instantskippycmd} },
-
-	{MODKEY|ControlMask,                    XK_Left,            directionfocus,            {.ui = 3 }},
-	{MODKEY|ControlMask,                    XK_Right,           directionfocus,            {.ui = 1 }},
-	{MODKEY|ControlMask,                    XK_Up,              directionfocus,            {.ui = 0 }},
-	{MODKEY|ControlMask,                    XK_Down,            directionfocus,            {.ui = 2 }},
-
-	{MODKEY|ShiftMask|ControlMask,                    XK_Right,           shiftview,            {.i = +1 }},
-	{MODKEY|ShiftMask|ControlMask,                    XK_Left,           shiftview,            {.i = -1 }},
-
-	{MODKEY|Mod1Mask,                       XK_Left,            moveleft,             {0}},
-	{MODKEY|Mod1Mask,                       XK_Right,           moveright,            {0}},
-
-	{MODKEY|ShiftMask,                      XK_Left,            tagtoleft,            {0}},
-	{MODKEY|ShiftMask,                      XK_Right,           tagtoright,           {0}},
-
-	{MODKEY|ShiftMask,                      XK_j,               moveresize,           {.i = 0}},
-	{MODKEY|ShiftMask,                      XK_k,               moveresize,           {.i = 1}},
-	{MODKEY|ShiftMask,                      XK_l,               moveresize,           {.i = 2}},
-	{MODKEY|ShiftMask,                      XK_h,               moveresize,           {.i = 3}},
-
-
-	{MODKEY|ControlMask,                    XK_comma,           cyclelayout,          {.i = -1 } },
-	{MODKEY|ControlMask,                    XK_period,          cyclelayout,          {.i = +1 } },
-	{MODKEY,                                XK_p,               setlayout,            {0}},
-	{MODKEY|ShiftMask,                      XK_p,               spawn,                {.v = displaycmd }},
-	{MODKEY|ShiftMask,                      XK_space,           spacetoggle,          {0}},
-	{MODKEY,                                XK_0,               view,                 {.ui = ~0}},
-	{MODKEY|ShiftMask,                      XK_0,               tag,                  {.ui = ~0}},
-	{MODKEY,                                XK_comma,           focusmon,             {.i = -1}},
-	{MODKEY,                                XK_period,          focusmon,             {.i = +1}},
-	{MODKEY|ShiftMask,                      XK_comma,           tagmon,               {.i = -1}},
-	{MODKEY|ShiftMask,                      XK_period,          tagmon,               {.i = +1}},
-	{MODKEY|Mod1Mask,                       XK_comma,           followmon,            {.i = -1}},
-	{MODKEY|Mod1Mask,                       XK_period,                       followmon,  {.i = +1}},
-
-	{MODKEY|ShiftMask|ControlMask|Mod1Mask, XK_period,                       desktopset, {0}},
+	{ Mod1Mask,                     XK_F4,           killclient,             {0} },
+	{ MODKEY,                       XK_Escape,       shutkill,               {0} },
+  { MODKEY|ControlMask,           XK_Escape,       quit,                   {0} },
+	{ MODKEY,                       XK_grave,        movemouse,              {0} },
+	{ MODKEY|ShiftMask,             XK_grave,        resizemouse,            {0} },
+	{ MODKEY|ControlMask,           XK_grave,        resizemouse,            {0} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_grave,        forceresizemouse,       {0} },
+	{ MODKEY|ShiftMask|ControlMask, XK_grave,        resizeaspectmouse,      {0} },
+	{ MODKEY,                       XK_apostrophe,   setlayout,              {.v = &layouts[0]} },
+	{ MODKEY|Mod1Mask,              XK_apostrophe,   setlayout,              {.v = &layouts[1]} },
+	{ MODKEY|ShiftMask,             XK_apostrophe,   setlayout,              {.v = &layouts[2]} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_apostrophe,   setlayout,              {.v = &layouts[3]} },
+	{ MODKEY|ShiftMask|ControlMask, XK_apostrophe,   setlayout,              {.v = &layouts[4]} },
+	{ MODKEY,                       XK_minus,        setoverlay,             {0} },
+	{ MODKEY|Mod1Mask,              XK_minus,        toggleshowtags,         { .ui = 2 } },
+	{ MODKEY|ShiftMask,             XK_minus,        createoverlay,          {0} },
+	{ MODKEY|ControlMask,           XK_minus,        togglesticky,           {0} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_minus,        toggleanimated,         { .ui = 2 } },
+	{ MODKEY|ShiftMask|ControlMask, XK_minus,        drawwindow,             {0} },
+	{ MODKEY,                       XK_equal,        togglescratchpad,       {0} },
+	{ MODKEY|Mod1Mask,              XK_equal,        togglealttag,           { .ui = 2 } },
+	{ MODKEY|ShiftMask,             XK_equal,        createscratchpad,       {0} },
+	{ MODKEY|ControlMask,           XK_equal,        warpfocus,              {0} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_equal,        toggledoubledraw,       {0} },
+	{ MODKEY|ShiftMask|ControlMask, XK_equal,        redrawwin,              {0} },
+	{ MODKEY,                       XK_slash,        spawn,                  {.v = startmenucmd} },
+	{ MODKEY|Mod1Mask,              XK_slash,        spawn,                  {.v = screenshotcmd} },
+	{ MODKEY|ShiftMask,             XK_slash,        spawn,                  {.v = quickmenucmd} },
+	{ MODKEY|ControlMask,           XK_slash,        spawn,                  {.v = notifycmd} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_slash,        spawn,                  {.v = instantshutdowncmd} },
+	{ MODKEY|ShiftMask|ControlMask, XK_slash,        spawn,                  {.v = instantkeybindscmd} },
+	{ MODKEY,                       XK_backslash,    overtoggle,             {.ui = ~0} },
+	{ MODKEY|Mod1Mask,              XK_backslash,    tag,                    {.ui = ~0} },
+	{ MODKEY|ShiftMask,             XK_backslash,    fullovertoggle,         {.ui = ~0} },
+	{ MODKEY|ControlMask,           XK_backslash,    view,                   {.ui = ~0} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_backslash,    setlayout,              {.v = &layouts[6]} },
+	{ MODKEY|ShiftMask|ControlMask, XK_backslash,    setlayout,              {.v = &layouts[7]} },
+	{ MODKEY,                       XK_0,            winview,                {0} },
+	{ MODKEY|Mod1Mask,              XK_0,            setlayout,              {0} },
+	{ MODKEY|ShiftMask,             XK_0,            hidewin,                {0} },
+	{ MODKEY|ControlMask,           XK_0,            unhideall,              {0} },
+	{ MODKEY|ShiftMask|Mod1Mask,    XK_0,            togglebar,              {0} },
+	{ MODKEY|ShiftMask|ControlMask, XK_0,            setlayout,              {.v = &layouts[5]} },
+	{ MODKEY,                       XK_bracketleft,  focusmon,               {.i = -1} },
+	{ MODKEY|Mod1Mask,              XK_bracketleft,  followmon,              {.i = -1} },
+	{ MODKEY|ShiftMask,             XK_bracketleft,  tagmon,                 {.i = -1} },
+	{ MODKEY|ControlMask,           XK_bracketleft,  cyclelayout,            {.i = -1} },
+	{ MODKEY,                       XK_bracketright, focusmon,               {.i = +1} },
+	{ MODKEY|Mod1Mask,              XK_bracketright, followmon,              {.i = +1} },
+	{ MODKEY|ShiftMask,             XK_bracketright, tagmon,                 {.i = +1} },
+	{ MODKEY|ControlMask,           XK_bracketright, cyclelayout,            {.i = +1} },
 	TAGKEYS(XK_1, 0)
 	TAGKEYS(XK_2, 1)
 	TAGKEYS(XK_3, 2)
@@ -615,38 +541,19 @@ static Key keys[] = {
 	TAGKEYS(XK_7, 6)
 	TAGKEYS(XK_8, 7)
 	TAGKEYS(XK_9, 8)
-    {MODKEY|ShiftMask|ControlMask, XK_q,                     quit,    {0}},
-	{0,                            XF86XK_MonBrightnessUp,   spawn,   {.v = upbright}},
-	{0,                            XF86XK_MonBrightnessDown, spawn,   {.v = downbright}},
-	{0,                            XF86XK_AudioLowerVolume,  spawn,   {.v = downvol}},
-	{0,                            XF86XK_AudioMute,         spawn,   {.v = mutevol}},
-	{0,                            XF86XK_AudioRaiseVolume,  spawn,   {.v = upvol}},
-	{0,                            XF86XK_AudioPlay,         spawn,   {.v = playerpause}},
-	{0,                            XF86XK_AudioPause,        spawn,   {.v = playerpause}},
-	{0,                            XF86XK_AudioNext,         spawn,   {.v = playernext}},
-	{0,                            XF86XK_AudioPrev,         spawn,   {.v = playerprevious}},
-
-	{MODKEY|ShiftMask,             XK_Print,                 spawn,   {.v = fscrotcmd}},
-	{MODKEY,                       XK_Print,                 spawn,   {.v = scrotcmd}},
-	{MODKEY|ControlMask,           XK_Print,                 spawn,   {.v = clipscrotcmd}},
-	{MODKEY|Mod1Mask,              XK_Print,                 spawn,   {.v = fclipscrotcmd}},
-
-	{ MODKEY,                      XK_o,                     winview, {0} },
-
+	{0}
 };
 
 /* button definitions */
 /* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, or ClkRootWin */
 static const Button buttons[] = {
 	/* click          event mask          button   function           argument */
-	{ ClkLtSymbol,    0,                  Button1, cyclelayout,       {.i = -1 } },
-	{ ClkLtSymbol,    0,                  Button3, cyclelayout,       {.i = +1 } },
+	{ ClkLtSymbol,    0,                  Button1, cyclelayout,       {.i = -1} },
+	{ ClkLtSymbol,    0,                  Button3, cyclelayout,       {.i = +1} },
 	{ ClkLtSymbol,    MODKEY,             Button1, createoverlay,     {0} },
 	{ ClkLtSymbol,    0,                  Button2, setlayout,         {.v = &layouts[0]} },
 	{ ClkWinTitle,    0,                  Button1, dragmouse,         {0} },
 	{ ClkWinTitle,    MODKEY,             Button1, setoverlay,        {0} },
-	{ ClkWinTitle,    MODKEY,             Button3, spawn,             {.v = notifycmd } },
-	{ ClkStatusText,  0,                  Button3, spawn,             {.v = caretinstantswitchcmd } },
 	{ ClkWinTitle,    0,                  Button2, closewin,          {0} },
 	{ ClkCloseButton, 0,                  Button1, killclient,        {0} },
 	{ ClkCloseButton, 0,                  Button3, togglelocked,      {0} },
@@ -657,24 +564,9 @@ static const Button buttons[] = {
 	{ ClkWinTitle,    ShiftMask,          Button4, pushup,            {0} },
 	{ ClkWinTitle,    ControlMask,        Button5, downscaleclient,   {0} },
 	{ ClkWinTitle,    ControlMask,        Button4, upscaleclient,     {0} },
-	{ ClkStatusText,  0,                  Button2, spawn,             {.v = termcmd } },
-	{ ClkStatusText,  0,                  Button4, spawn,             {.v = upvol } },
-	{ ClkStatusText,  0,                  Button5, spawn,             {.v = downvol } },
-	{ ClkStatusText,  MODKEY,             Button2, spawn,             {.v = mutevol } },
-	{ ClkStatusText,  0,                  Button1, spawn,             {.v = panther } },
-	{ ClkStatusText,  MODKEY|ShiftMask,   Button1, spawn,             {.v = pavucontrol } },
-	{ ClkStatusText,  MODKEY|ControlMask, Button1, spawn,             {.v = notifycmd } },
-	{ ClkStatusText,  MODKEY,             Button1, spawn,             {.v = instantsettings } },
-	{ ClkStatusText,  MODKEY,             Button3, spawn,             {.v = spoticli } },
-	{ ClkStatusText,  MODKEY,             Button4, spawn,             {.v = upbright } },
-	{ ClkStatusText,  MODKEY,             Button5, spawn,             {.v = downbright } },
-	{ ClkRootWin,     MODKEY,             Button3, spawn,             {.v = notifycmd } },
-	{ ClkRootWin,     0,                  Button1, spawn,             {.v = panther } },
 	{ ClkRootWin,     MODKEY,             Button1, setoverlay,        {0} },
-	{ ClkRootWin,     0,                  Button3, spawn,             {.v = smartcmd } },
 	{ ClkRootWin,     0,                  Button5, showoverlay,       {0} },
 	{ ClkRootWin,     0,                  Button4, hideoverlay,       {0} },
-	{ ClkRootWin,     0,                  Button2, spawn,             {.v = instantmenucmd } },
 	{ ClkClientWin,   MODKEY,             Button1, movemouse,         {0} },
 	{ ClkClientWin,   MODKEY,             Button2, togglefloating,    {0} },
 	{ ClkClientWin,   MODKEY,             Button3, resizemouse,       {0} },
@@ -682,18 +574,12 @@ static const Button buttons[] = {
 	{ ClkClientWin,   MODKEY|ShiftMask,   Button3, resizeaspectmouse, {0} },
 	{ ClkTagBar,      0,                  Button1, dragtag,           {0} },
 	{ ClkTagBar,      0,                  Button5, viewtoright,       {0} },
-	{ ClkTagBar,      MODKEY,             Button4, shiftview,         {.i = -1 } },
-	{ ClkTagBar,      MODKEY,             Button5, shiftview,         {.i = +1 } },
+	{ ClkTagBar,      MODKEY,             Button4, shiftview,         {.i = -1} },
+	{ ClkTagBar,      MODKEY,             Button5, shiftview,         {.i = +1} },
 	{ ClkTagBar,      0,                  Button4, viewtoleft,        {0} },
 	{ ClkTagBar,      0,                  Button3, toggleview,        {0} },
 	{ ClkTagBar,      MODKEY,             Button1, tag,               {0} },
 	{ ClkTagBar,      Mod1Mask,           Button1, followtag,         {0} },
 	{ ClkTagBar,      MODKEY,             Button3, toggletag,         {0} },
-	{ ClkShutDown,    0,                  Button1, spawn,             {.v = instantshutdowncmd } },
-	{ ClkShutDown,    0,                  Button3, spawn,             {.v = slockcmd } },
-	{ ClkShutDown,    0,                  Button2, spawn,             {.v = oslockcmd } },
 	{ ClkSideBar,     0,                  Button1, gesturemouse,      {0} },
-	{ ClkStartMenu,   0,                  Button1, spawn,             {.v = startmenucmd}},
-	{ ClkStartMenu,   ShiftMask,          Button1, toggleprefix,      {0}},
-	{ ClkStartMenu,   0,                  Button3, spawn,             {.v = quickmenucmd}},
 };

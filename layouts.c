@@ -46,14 +46,14 @@ bstack(Monitor *m) {
  * Different ids for snapping positions
  *
  *    ##################################
- *    # 8             1              2 # 
- *    #                                # 
- *    #                                # 
- *    #                                # 
- *    # 7             9              3 # 
- *    #                                # 
- *    #                                # 
- *    # 6             5              4 # 
+ *    # 8             1              2 #
+ *    #                                #
+ *    #                                #
+ *    #                                #
+ *    # 7             9              3 #
+ *    #                                #
+ *    #                                #
+ *    # 6             5              4 #
  *    ##################################
  *
  * */
@@ -147,7 +147,7 @@ grid(Monitor *m) {
 	int i, n, rows, framecount;
 	unsigned int cols;
 	Client *c;
-    
+
 	if (m->clientcount <= 2 && m->mw > m->mh)
 	{
 		tile(m);
@@ -205,7 +205,7 @@ monocle(Monitor *m)
 void
 focusstack2(const Arg *arg)
 {
-	Client *nextVisibleClient = findVisibleClient(selmon->sel->next) ?: findVisibleClient(selmon->clients);
+  Client *nextVisibleClient = findVisibleClient(selmon->sel->next) ? findVisibleClient(selmon->sel->next) : findVisibleClient(selmon->clients);
 
 	if (nextVisibleClient) {
 		if (nextVisibleClient->mon != selmon)

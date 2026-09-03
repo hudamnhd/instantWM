@@ -67,7 +67,7 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
 
 
 
-////// Colorscheme enums ////// 
+////// Colorscheme enums //////
 // each element has the possibility of a hover over
 enum { SchemeHover, SchemeNoHover, SchemeHoverLast };
 // tag states
@@ -304,7 +304,6 @@ void setfocus(Client *c);
 void setfullscreen(Client *c, int fullscreen);
 void setlayout(const Arg *arg);
 void commandlayout(const Arg *arg);
-void commandprefix(const Arg *arg);
 void setmfact(const Arg *arg);
 void setup(void);
 void seturgent(Client *c, int urg);
@@ -337,7 +336,6 @@ void toggleshowtags(const Arg *arg);
 void togglebar(const Arg *arg);
 void togglefloating(const Arg *arg);
 void togglesticky(const Arg *arg);
-void toggleprefix(const Arg *arg);
 void toggletag(const Arg *arg);
 void togglescratchpad(const Arg *arg);
 void createscratchpad(const Arg *arg);

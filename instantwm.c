@@ -53,7 +53,6 @@ static int freealttab = 0;
 
 static Client *lastclient;
 
-static int tagprefix = 0;
 static int bardragging = 0;
 static int altcursor = 0;
 static int tagwidth = 0;
@@ -93,7 +92,6 @@ static Atom wmatom[WMLast], netatom[NetLast], xatom[XLast], motifatom;
 static int running = 1;
 static Cur *cursor[CurLast];
 
-static Clr **scheme;
 static Clr ***tagscheme;
 static Clr ***windowscheme;
 static Clr ***closebuttonscheme;
@@ -180,7 +178,7 @@ void resetsnap(Client *c) {
 void saveallfloating(Monitor *m) {
     int i;
     Client *c;
-    for (i = 1; i < 20; ++i) {
+    for (i = 1; i < 8; ++i) {
         if (m->pertag->ltidxs[i][m->pertag->sellts[i]]->arrange != NULL)
             continue;
         for (c = m->clients; c; c = c->next) {
@@ -249,7 +247,7 @@ void directionfocus(const Arg *arg) {
 void restoreallfloating(Monitor *m) {
     int i;
     Client *c;
-    for (i = 1; i < 20; ++i) {
+    for (i = 1; i < 8; ++i) {
         if (m->pertag->ltidxs[i][m->pertag->sellts[i]]->arrange != NULL)
             continue;
         for (c = m->clients; c; c = c->next) {
@@ -654,7 +652,7 @@ void focuslastclient(const Arg *arg) {
 
     c = lastclient;
 
-    if (c->tags & 1 << 20) {
+    if (c->tags & 1 << 8) {
         togglescratchpad(NULL);
         return;
     }
@@ -739,7 +737,7 @@ void applyrules(Client *c) {
                     ;
                 case 4:
                     selmon->sel = c;
-                    c->tags = 1 << 20;
+                    c->tags = 1 << 8;
                     selmon->scratchvisible = 1;
                     c->issticky = 1;
                     c->isfloating = 1;
@@ -1158,7 +1156,7 @@ void clientmessage(XEvent *e) {
                 focus(NULL);
             }
             showoverlay();
-        } else if (c->tags == 1 << 20) {
+        } else if (c->tags == 1 << 8) {
             selmon = c->mon;
             togglescratchpad(NULL);
         } else {
@@ -1233,7 +1231,7 @@ void distributeclients(const Arg *arg) {
 
     for (c = selmon->clients; c; c = c->next) {
         // overlays or scratchpads aren't on regular tags anyway
-        if (c == selmon->overlay || c->tags & 1 << 20)
+        if (c == selmon->overlay || c->tags & 1 << 8)
             continue;
         if (tagcounter > 8) {
             tagcounter = 0;
@@ -1585,10 +1583,7 @@ void drawbar(Monitor *m) {
     }
 
     // draw start menu icon with instantOS logo
-    if (tagprefix)
-        drw_setscheme(drw, tagscheme[SchemeNoHover][SchemeTagFocus]);
-    else
-        drw_setscheme(drw, statusscheme);
+    drw_setscheme(drw, statusscheme);
 
     iconoffset = (bh - 20) / 2;
     int startmenuinvert = (selmon->gesture == 13);
@@ -1681,14 +1676,14 @@ void drawbar(Monitor *m) {
             int each_width = total_width / n;  // Base width for each title
             int remainder = total_width % n;   // Remainder to distribute extra pixels
 
-          
+
             // render all window titles
             for (c = m->clients; c; c = c->next) {
                 if (!ISVISIBLE(c))
                     continue;
 
                 int this_width = each_width;
-                
+
                 if (remainder > 0) {
                     this_width++;  // Add one pixel to account for the remainder
                     remainder--;
@@ -1882,7 +1877,7 @@ void focus(Client *c) {
                              borderscheme[SchemeBorderFloatFocus].pixel);
 
         setfocus(c);
-        if (c->tags & 1 << 20) {
+        if (c->tags & 1 << 8) {
             selmon->activescratchpad = c;
         }
     } else {
@@ -3017,7 +3012,7 @@ void gesturemouse(const Arg *arg) {
         spawn(&((Arg){.v = onboardcmd}));
     } else {
         if (!tmpactive && abs(ev.xmotion.y_root - y) < 100) {
-            spawn(&((Arg){.v = caretinstantswitchcmd}));
+            spawn(&((Arg){.v = instantswitchcmd}));
         }
     }
 
@@ -3580,8 +3575,6 @@ void shutkill(const Arg *arg) {
 }
 
 void nametag(const Arg *arg) {
-    char *p;
-    FILE *f;
     int i;
 
     char *name = (char *)arg->v;
@@ -3602,7 +3595,7 @@ void nametag(const Arg *arg) {
 }
 
 void resetnametag(const Arg *arg) {
-    for (int i = 0; i < 21; i++)
+    for (int i = 0; i < 9; i++)
         strcpy((char *)&tags[i], tags_default[i]);
     tagwidth = gettagwidth();
     drawbars();
@@ -4141,7 +4134,7 @@ void sendmon(Client *c, Monitor *m) {
     detachstack(c);
     c->mon = m;
     // make scratchpad windows reappear on the other monitor scratchpad
-    if (c->tags != (1 << 20)) {
+    if (c->tags != (1 << 8)) {
         c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
         resetsticky(c);
     } else {
@@ -4252,11 +4245,6 @@ void setfullscreen(Client *c, int fullscreen) {
     }
 }
 
-void commandprefix(const Arg *arg) {
-    tagprefix = arg->ui;
-    drawbar(selmon);
-}
-
 void commandlayout(const Arg *arg) {
     int layoutnumber;
     Arg *larg;
@@ -4272,29 +4260,12 @@ void commandlayout(const Arg *arg) {
 void setlayout(const Arg *arg) {
     int multimon;
     multimon = 0;
-    if (tagprefix) {
-        int i;
-        Monitor *m;
-        multimon = 1;
-        for (m = mons; m; m = m->next) {
-            for (i = 0; i < 20; ++i) {
-                if (!arg || !arg->v || arg->v != m->lt[m->sellt])
-                    m->pertag->sellts[i] ^= 1;
-                if (arg && arg->v)
-                    m->pertag->ltidxs[i][m->pertag->sellts[i]] =
-                        (Layout *)arg->v;
-            }
-        }
-        tagprefix = 0;
-        setlayout(arg);
-    } else {
-        if (!arg || !arg->v || arg->v != selmon->lt[selmon->sellt])
-            selmon->sellt = selmon->pertag->sellts[selmon->pertag->curtag] ^= 1;
-        if (arg && arg->v)
-            selmon->lt[selmon->sellt] =
-                selmon->pertag->ltidxs[selmon->pertag->curtag][selmon->sellt] =
-                    (Layout *)arg->v;
-    }
+      if (!arg || !arg->v || arg->v != selmon->lt[selmon->sellt])
+          selmon->sellt = selmon->pertag->sellts[selmon->pertag->curtag] ^= 1;
+      if (arg && arg->v)
+          selmon->lt[selmon->sellt] =
+              selmon->pertag->ltidxs[selmon->pertag->curtag][selmon->sellt] =
+                  (Layout *)arg->v;
     strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol,
             sizeof selmon->ltsymbol);
     if (selmon->sel)
@@ -4652,15 +4623,6 @@ void spawn(const Arg *arg) {
     }
 }
 
-int computeprefix(const Arg *arg) {
-    if (tagprefix && arg->ui) {
-        tagprefix = 0;
-        return arg->ui << 10;
-    } else {
-        return arg->ui;
-    }
-}
-
 void setclienttagprop(Client *c) {
     long data[] = {(long)c->tags, (long)c->mon->num};
     XChangeProperty(dpy, c->win, netatom[NetClientInfo], XA_CARDINAL, 32,
@@ -4668,10 +4630,10 @@ void setclienttagprop(Client *c) {
 }
 
 void tag(const Arg *arg) {
-    int ui = computeprefix(arg);
+    int ui = arg->ui;
     Client *c;
     if (selmon->sel && ui & TAGMASK) {
-        if (selmon->sel->tags == 1 << 20)
+        if (selmon->sel->tags == 1 << 8)
             selmon->sel->issticky = 0;
         c = selmon->sel;
         selmon->sel->tags = ui & TAGMASK;
@@ -4683,14 +4645,14 @@ void tag(const Arg *arg) {
 
 void tagall(const Arg *arg) {
     Client *c;
-    int ui = computeprefix(arg);
+    int ui = arg->ui;
     if (selmon->pertag->curtag == 0)
         return;
     if (selmon->sel && ui & TAGMASK) {
         for (c = selmon->clients; c; c = c->next) {
             if (!(c->tags & 1 << (selmon->pertag->curtag - 1)))
                 continue;
-            if (c->tags == 1 << 20)
+            if (c->tags == 1 << 8)
                 c->issticky = 0;
             c->tags = ui & TAGMASK;
         }
@@ -4702,19 +4664,13 @@ void tagall(const Arg *arg) {
 void followtag(const Arg *arg) {
     if (!selmon->sel)
         return;
-    if (tagprefix) {
-        tag(arg);
-        tagprefix = 1;
-        view(arg);
 
-    } else {
-        tag(arg);
-        view(arg);
-    }
+    tag(arg);
+    view(arg);
 }
 
 void swaptags(const Arg *arg) {
-    int ui = computeprefix(arg);
+    int ui = arg->ui;
     unsigned int newtag = ui & TAGMASK;
     unsigned int curtag = selmon->tagset[selmon->seltags];
 
@@ -4984,11 +4940,6 @@ void togglesticky(const Arg *arg) {
         return;
     selmon->sel->issticky = !selmon->sel->issticky;
     arrange(selmon);
-}
-
-void toggleprefix(const Arg *arg) {
-    tagprefix ^= 1;
-    drawbar(selmon);
 }
 
 // disable/enable animations
@@ -5290,13 +5241,13 @@ void changefloating(Client *c) {
 }
 
 void toggletag(const Arg *arg) {
-    int ui = computeprefix(arg);
+    int ui = arg->ui;
     unsigned int newtags;
 
     if (!selmon->sel)
         return;
 
-    if (selmon->sel->tags == 1 << 20) {
+    if (selmon->sel->tags == 1 << 8) {
         tag(arg);
         return;
     }
@@ -5326,8 +5277,8 @@ void togglescratchpad(const Arg *arg) {
         selmon->scratchvisible = 1;
 
     for (c = selmon->clients; c; c = c->next) {
-        if (c->tags & 1 << 20) {
-            c->tags = 1 << 20;
+        if (c->tags & 1 << 8) {
+            c->tags = 1 << 8;
             if (!scratchexists)
                 scratchexists = 1;
             c->issticky = selmon->scratchvisible;
@@ -5348,7 +5299,7 @@ void togglescratchpad(const Arg *arg) {
     if (selmon->scratchvisible) {
 
         for (c = selmon->clients; c; c = c->next) {
-            if (c->tags & 1 << 20) {
+            if (c->tags & 1 << 8) {
                 XRaiseWindow(dpy, c->win);
             }
         }
@@ -5357,7 +5308,7 @@ void togglescratchpad(const Arg *arg) {
             activescratchpad = selmon->activescratchpad;
         } else {
             for (c = selmon->clients; c; c = c->next) {
-                if (c->tags == 1 << 20) {
+                if (c->tags == 1 << 8) {
                     if ((!selmon->sel || !selmon->sel->isfullscreen) &&
                         c->issticky) {
                         activescratchpad = c;
@@ -5391,12 +5342,12 @@ void createscratchpad(const Arg *arg) {
     c = selmon->sel;
 
     // turn scratchpad back into normal window
-    if (c->tags == 1 << 20) {
+    if (c->tags == 1 << 8) {
         tag(&((Arg){.ui = 1 << (selmon->pertag->curtag - 1)}));
         return;
     }
 
-    c->tags = 1 << 20;
+    c->tags = 1 << 8;
     c->issticky = selmon->scratchvisible;
     if (!c->isfloating)
         togglefloating(NULL);
@@ -5928,7 +5879,7 @@ void updatewmhints(Client *c) {
 
 void view(const Arg *arg) {
 
-    int ui = computeprefix(arg);
+    int ui = arg->ui;
     int i;
     printf("%d\n", (int)(arg->ui));
 
@@ -6185,8 +6136,8 @@ void shiftview(const Arg *arg) {
     } while (!visible && ++count < 10);
 
     if (count < 10) {
-        if (nextseltags & (1 << 20))
-            nextseltags = nextseltags ^ (1 << 20);
+        if (nextseltags & (1 << 8))
+            nextseltags = nextseltags ^ (1 << 8);
         a.i = nextseltags;
         view(&a);
     }
@@ -6319,7 +6270,7 @@ void overtoggle(const Arg *arg) {
 
     if (selmon->scratchvisible) {
         for (c = selmon->clients; c; c = c->next) {
-            if (c->tags & 1 << 20) {
+            if (c->tags & 1 << 8) {
                 showscratch = 1;
                 break;
             }
@@ -6427,7 +6378,7 @@ void winview(const Arg *arg) {
         return;
 
     a.ui = c->tags;
-    if (c->tags == 1 << 20) {
+    if (c->tags == 1 << 8) {
         if (selmon->pertag->curtag == 0) {
             lastview(NULL);
         }
