@@ -47,6 +47,7 @@
 static Systray *systray = NULL;
 static const char broken[] = "broken";
 static char stext[1024];
+static char keydlayer[128];
 
 static int showalttag = 0;
 static int freealttab = 0;
@@ -1665,8 +1666,7 @@ void drawbar(Monitor *m) {
     // render layout indicator
     w = get_blw(m);
     drw_setscheme(drw, statusscheme);
-    x = drw_text(drw, x, 0, w, bh, (w - TEXTW(m->ltsymbol)) * 0.5 + 10,
-                 m->ltsymbol, 0, 0);
+    x = drw_text(drw, x, 0, w, bh, (w - TEXTW(m->ltsymbol)) * 0.5 + 10, m->ltsymbol, 0, 0);
 
     if ((w = m->ww - sw - x - stw) > bh) {
         if (n > 0) {
@@ -1674,7 +1674,7 @@ void drawbar(Monitor *m) {
             int total_width = w + 1;            // Total available width for titles
             int each_width = total_width / n;  // Base width for each title
             int remainder = total_width % n;   // Remainder to distribute extra pixels
-
+            int win_number = 1;
 
             // render all window titles
             for (c = m->clients; c; c = c->next) {
@@ -1720,15 +1720,33 @@ void drawbar(Monitor *m) {
                     }
                 }
 
-                // don't center text if it is too long
-                if (TEXTW(c->name) < this_width - 64) {
+                // render window number + title
+                char title[256];
+
+                if (m->sel == c && keydlayer[0]) {
+                    snprintf(title, sizeof(title), "[%.32s] %s%d. %.200s",
+                             keydlayer,
+                             c->isfloating ? "~" : "",
+                             win_number,
+                             c->name);
+                } else {
+                    snprintf(title, sizeof(title), "%s%d. %.237s",
+                             c->isfloating ? "~" : "",
+                             win_number,
+                             c->name);
+                }
+
+                win_number++;
+
+                if (TEXTW(title) < this_width - 64) {
                     drw_text(drw, x, 0, this_width, bh,
-                             (this_width - TEXTW(c->name)) * 0.5,
-                             c->name, 0, 4);
+                             (this_width - TEXTW(title)) * 0.5,
+                             title, 0, 4);
                 } else {
                     drw_text(drw, x, 0, this_width, bh,
-                             lrpad / 2 + 20, c->name, 0, 4);
+                             lrpad / 2 + 20, title, 0, 4);
                 }
+                // don't center text if it is too long
 
                 if (m->sel == c) {
                     // render close button
@@ -1759,6 +1777,7 @@ void drawbar(Monitor *m) {
                     // save position of focussed window title on bar
                     m->activeoffset = selmon->mx + x;
                 }
+
                 x += this_width;
             }
         } else {
@@ -1775,6 +1794,14 @@ void drawbar(Monitor *m) {
                 drw_text(drw, x + bh + ((m->btw - bh) - titlewidth + 1) / 2, 0,
                          titlewidth, bh, 0,
                          "Press space to launch an application", 0, 0);
+            } else {
+                int titlewidth =
+                    TEXTW(keydlayer) < m->btw
+                        ? TEXTW(keydlayer)
+                        : (m->btw - bh);
+                drw_text(drw, x + bh + ((m->btw - bh) - titlewidth + 1) / 2, 0,
+                         titlewidth, bh, 0,
+                         keydlayer, 0, 0);
             }
         }
     }
@@ -4955,6 +4982,17 @@ void setborderwidth(const Arg *arg) {
     c->bw = arg->i;
     d = width - c->bw;
     resize(c, c->x, c->y, c->w + 2 * d, c->h + 2 * d, 0);
+}
+
+void setlayerkeyd(const Arg *arg) {
+	if (!arg->v)
+		return;
+
+	if (strcmp(keydlayer, (char *)arg->v) == 0)
+		return;
+
+	snprintf(keydlayer, sizeof(keydlayer), "%s", (char *)arg->v);
+	drawbar(selmon);
 }
 
 // disable/enable window focus following the mouse
