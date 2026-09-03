@@ -1332,28 +1332,27 @@ Monitor *createmon(void) {
 }
 
 void cyclelayout(const Arg *arg) {
-    Layout *l;
-    for (l = (Layout *)layouts; l != selmon->lt[selmon->sellt]; l++)
-        ;
-    if (arg->i > 0) {
-        if (l->symbol && (l + 1)->symbol) {
-            if ((l + 1)->arrange == &overviewlayout)
-                setlayout(&((Arg){.v = (l + 2)}));
-            else
-                setlayout(&((Arg){.v = (l + 1)}));
-        } else {
-            setlayout(&((Arg){.v = layouts}));
-        }
-    } else {
-        if (l != layouts && (l - 1)->symbol) {
-            if ((l - 1)->arrange == &overviewlayout)
-                setlayout(&((Arg){.v = (l - 2)}));
-            else
-                setlayout(&((Arg){.v = (l - 1)}));
-        } else {
-            setlayout(&((Arg){.v = &layouts[LENGTH(layouts) - 2]}));
+    static const int orders[][2] = {
+        { 0, 2 },
+        { 1, 4 },
+        { 3, 5 },
+        { 7, 8 },
+        { 6, 1 },
+    };
+
+    const int *order = orders[arg->ui];
+    int n = 2;
+
+    for (int i = 0; i < n; i++) {
+        if (selmon->lt[selmon->sellt] == &layouts[order[i]]) {
+            setlayout(&(const Arg){
+                .v = &layouts[order[(i + 1) % n]]
+            });
+            return;
         }
     }
+
+    setlayout(&(const Arg){ .v = &layouts[order[0]]});
 }
 
 void destroynotify(XEvent *e) {
@@ -6310,7 +6309,7 @@ void fullovertoggle(const Arg *arg) {
         winview(NULL);
     } else {
         selmon->lt[selmon->sellt] = selmon->pertag->ltidxs[0][selmon->sellt] =
-            (Layout *)&layouts[3];
+            (Layout *)&layouts[2];
         view(arg);
     }
 }
@@ -6354,40 +6353,16 @@ Monitor *wintomon(Window w) {
 /* Selects for the view of the focused window. The list of tags */
 /* to be displayed is matched to the focused window tag list. */
 void winview(const Arg *arg) {
-    Window win, win_r, win_p, *win_c;
-    unsigned nc;
-    int unused;
     Client *c;
     Arg a;
 
-    if (&overviewlayout == selmon->lt[selmon->sellt]->arrange) {
-        for (c = selmon->clients; c; c = c->next) {
-            if (c == selmon->overlay)
-                continue;
-            if (c->isfloating)
-                restorefloating(c);
-        }
-    }
+    c = selmon->sel;
 
-    if (!XGetInputFocus(dpy, &win, &unused))
-        return;
-    while (XQueryTree(dpy, win, &win_r, &win_p, &win_c, &nc) && win_p != win_r)
-        win = win_p;
-
-    if (!(c = wintoclient(win)))
-        return;
+    if (!c)
+      return;
 
     a.ui = c->tags;
-    if (c->tags == 1 << 8) {
-        if (selmon->pertag->curtag == 0) {
-            lastview(NULL);
-        }
-        if (!selmon->scratchvisible) {
-            togglescratchpad(NULL);
-        }
-    } else {
-        view(&a);
-    }
+    view(&a);
 }
 
 /* There's no way to check accesses to destroyed windows, thus those cases are
