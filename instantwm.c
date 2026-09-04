@@ -1724,14 +1724,16 @@ void drawbar(Monitor *m) {
                 char title[256];
 
                 if (m->sel == c && keydlayer[0]) {
-                    snprintf(title, sizeof(title), "[%.32s] %s%d. %.200s",
+                    snprintf(title, sizeof(title), "[%.32s] %s%s%d. %.200s",
                              keydlayer,
                              c->isfloating ? "~" : "",
+                             c->cantfocus ? ">" : "",
                              win_number,
                              c->name);
                 } else {
-                    snprintf(title, sizeof(title), "%s%d. %.237s",
+                    snprintf(title, sizeof(title), "%s%s%d. %.237s",
                              c->isfloating ? "~" : "",
+                             c->cantfocus ? ">" : "",
                              win_number,
                              c->name);
                 }
@@ -1996,20 +1998,16 @@ void focusstack(const Arg *arg) {
         (selmon->sel->isfullscreen && !selmon->sel->isfakefullscreen))
         return;
     if (arg->i > 0) {
-        for (c = selmon->sel->next; c && (!ISVISIBLE(c) || HIDDEN(c));
-             c = c->next)
-            ;
+        for (c = selmon->sel->next; c && (!ISVISIBLE(c)  || HIDDEN(c) || c->cantfocus); c = c->next);
         if (!c)
-            for (c = selmon->clients; c && (!ISVISIBLE(c) || HIDDEN(c));
-                 c = c->next)
-                ;
+            for (c = selmon->clients; c && (!ISVISIBLE(c) || HIDDEN(c) || c->cantfocus); c = c->next);
     } else {
         for (i = selmon->clients; i != selmon->sel; i = i->next)
-            if (ISVISIBLE(i) && !HIDDEN(i))
+            if (ISVISIBLE(i) && !HIDDEN(i) && !i->cantfocus)
                 c = i;
         if (!c)
             for (; i; i = i->next)
-                if (ISVISIBLE(i) && !HIDDEN(i))
+                if (ISVISIBLE(i) && !HIDDEN(i) && !i->cantfocus)
                     c = i;
     }
     if (c) {
@@ -5259,6 +5257,25 @@ void togglefloating(const Arg *arg) {
         selmon->sel->sfh = selmon->sel->h;
     }
     arrange(selmon);
+}
+
+void resetcanfocus() {
+    Client *c;
+
+    for (c = selmon->clients; c; c = c->next)
+        c->cantfocus = 0;
+
+    arrange(selmon);
+}
+
+void togglecanfocus(const Arg *arg) {
+	if (!selmon->sel)
+		return;
+
+	selmon->sel->cantfocus = !selmon->sel->cantfocus;
+
+	if (selmon->sel->cantfocus)
+    focuslastclient(NULL);
 }
 
 void changefloating(Client *c) {

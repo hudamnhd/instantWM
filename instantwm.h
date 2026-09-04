@@ -106,7 +106,7 @@ struct Client {
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh, hintsvalid;
 	int bw, oldbw;
 	unsigned int tags;
-	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen, isfakefullscreen, islocked, issticky, snapstatus;
+	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen, isfakefullscreen, islocked, issticky, snapstatus, cantfocus;
 	Client *next;
 	Client *snext;
 	Monitor *mon;
@@ -336,6 +336,8 @@ void togglelocked(const Arg *arg);
 void toggleshowtags(const Arg *arg);
 void togglebar(const Arg *arg);
 void togglefloating(const Arg *arg);
+void togglecanfocus(const Arg *arg);
+void resetcanfocus();
 void togglesticky(const Arg *arg);
 void toggletag(const Arg *arg);
 void togglescratchpad(const Arg *arg);

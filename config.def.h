@@ -497,7 +497,9 @@ static Key keys[] = {
 	{ MODKEY|ShiftMask|Mod1Mask,    XK_Tab,          alttabfree,             {0} },
 	{ MODKEY|ShiftMask|ControlMask, XK_Tab,          desktopset,             {0} },
   { MODKEY,                       XK_space,        spacetoggle,            {0} },
+  { MODKEY|Mod1Mask,              XK_space,        resetcanfocus,          {0} },
   { MODKEY|ShiftMask,             XK_space,        togglefloating,         {0} },
+  { MODKEY|ControlMask,           XK_space,        togglecanfocus,         {0} },
 
 	{ Mod1Mask,                     XK_F4,           killclient,             {0} },
 	{ MODKEY,                       XK_Escape,       shutkill,               {0} },
