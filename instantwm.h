@@ -211,6 +211,7 @@ void arrangemon(Monitor *m);
 void resetcursor();
 void attach(Client *c);
 void attachstack(Client *c);
+void attachbottom(Client *c);
 void buttonpress(XEvent *e);
 void checkotherwm(void);
 void cleanup(void);
