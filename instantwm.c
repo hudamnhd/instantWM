@@ -1312,8 +1312,8 @@ Monitor *createmon(void) {
     m->clientcount = 0;
     m->overlaymode = 0;
     m->scratchvisible = 0;
-    m->lt[0] = &layouts[3];
-    m->lt[1] = &layouts[0];
+    m->lt[0] = &layouts[0];
+    m->lt[1] = &layouts[1];
     strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
     m->pertag = ecalloc(1, sizeof(Pertag));
     m->pertag->curtag = m->pertag->prevtag = 1;
@@ -1322,8 +1322,8 @@ Monitor *createmon(void) {
         m->pertag->nmasters[i] = m->nmaster;
         m->pertag->mfacts[i] = m->mfact;
 
-        m->pertag->ltidxs[i][0] = m->lt[1];
-        m->pertag->ltidxs[i][1] = m->lt[0];
+        m->pertag->ltidxs[i][0] = m->lt[0];
+        m->pertag->ltidxs[i][1] = m->lt[1];
         m->pertag->sellts[i] = m->sellt;
 
         m->pertag->showbars[i] = m->showbar;
