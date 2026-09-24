@@ -29,7 +29,7 @@ dist: clean
 
 .PHONY: install
 install: all
-	install -d ${DESTDIR}{${PREFIX}/bin,/usr/share/xsessions,${MANPREFIX}/man1}
+	install -d ${DESTDIR}${PREFIX}/bin ${DESTDIR}/usr/share/xsessions ${DESTDIR}${MANPREFIX}/man1
 	install -m  755 -s instantwm ${DESTDIR}${PREFIX}/bin/
 	install -Dm 755 instantwmctl.sh ${DESTDIR}${PREFIX}/bin/instantwmctl
 	install -m  644 instantwm.1 ${DESTDIR}${MANPREFIX}/man1/

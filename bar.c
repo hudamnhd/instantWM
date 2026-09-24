@@ -24,7 +24,7 @@ extern int commandoffsets[20];
 extern int pausedraw;
 
 /* Helper: Get the width of the layout symbol area */
-int get_layout_symbol_width(Monitor *m) { return TEXTW(m->ltsymbol) * 1.5; }
+int get_layout_symbol_width(Monitor *m) { return TEXTW(m->ltsymbol) * 1; }
 
 void clickstatus(const Arg *arg) {
     int x;
@@ -390,7 +390,7 @@ static void draw_window_titles(Monitor *m, int x, int w, int n) {
     } else {
         drw_setscheme(drw, statusscheme);
         drw_rect(drw, x, 0, w, bh, 1, 1);
-        drw_text(drw, x, 0, bh, bh, lrpad / 2, "", 0, 0);
+        drw_text(drw, x, 0, bh, bh, lrpad / 2, "", 0, 0);
 
         /* Display help message if no application is opened */
         if (!selmon->clients) {
