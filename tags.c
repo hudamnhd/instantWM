@@ -41,6 +41,15 @@ int computeprefix(const Arg *arg) {
     return arg->ui;
 }
 
+void keyview(const Arg *arg) {
+    int ui = arg->ui;
+    if (ui == selmon->tagset[selmon->seltags]) {
+        if (selmon->pertag->current_tag != selmon->pertag->prevtag)
+            lastview(NULL);
+    } else
+        view(&((Arg){.ui = ui}));
+}
+
 void nametag(const Arg *arg) {
     int i;
 

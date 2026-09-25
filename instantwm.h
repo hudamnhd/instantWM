@@ -434,6 +434,7 @@ void incnmaster(const Arg *arg);
 void keypress(XEvent *e);
 int xcommand(void);
 void killclient(const Arg *arg);
+void keyview(const Arg *arg);
 void manage(Window w, XWindowAttributes *wa);
 void mappingnotify(XEvent *e);
 void maprequest(XEvent *e);

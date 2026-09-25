@@ -5,6 +5,7 @@
 
 #include "instantwm.h"
 
+void keyview(const Arg *arg);
 void view(const Arg *arg);
 void toggleview(const Arg *arg);
 void tag(const Arg *arg);
