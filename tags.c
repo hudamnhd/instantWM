@@ -726,9 +726,11 @@ void winview(const Arg *arg) {
 
     a.ui = c->tags;
     if (c->tags == SCRATCHPAD_MASK) {
-        view(&((Arg){.ui = 1 << (PERTAG_CURRENT(selmon) - 1)}));
+        lastview(NULL);
+
+        if (ISSCRATCHPAD(c))
+            scratchpad_show(&(Arg){.v = c->scratchpad_name});
     } else {
         view(&a);
     }
-    focus(c);
 }
