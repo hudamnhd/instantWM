@@ -31,6 +31,7 @@ extern int focusfollowsfloatmouse; /* focus follows mouse for floating */
 extern int altcursor;              /* current alternate cursor state */
 extern int doubledraw;             /* high refresh rate mode */
 extern int specialnext;
+extern int isoverview;
 
 /* ========== Bar state ========== */
 extern int bar_dragging; /* currently dragging on bar */
@@ -72,8 +73,10 @@ extern const Layout layouts[];
 extern int numtags;
 extern size_t keys_len;
 extern size_t dkeys_len;
+extern size_t okeys_len;
 extern size_t commands_len;
 extern size_t buttons_len;
+extern size_t obuttons_len;
 extern size_t layouts_len;
 extern size_t rules_len;
 extern size_t fonts_len;
@@ -81,6 +84,7 @@ extern size_t fonts_len;
 /* ========== Variables from config.c (non-static in config.h) ========== */
 extern Xcommand commands[];
 extern Button buttons[];
+extern Button obuttons[];
 extern const char *fonts[];
 extern const char *tagcolors[2][5][3];
 extern const char *windowcolors[2][7][3];
@@ -89,6 +93,7 @@ extern const char *bordercolors[];
 extern const char *statusbarcolors[];
 extern Key keys[];
 extern Key dkeys[];
+extern Key okeys[];
 extern const Rule rules[];
 extern ResourcePref resources[];
 

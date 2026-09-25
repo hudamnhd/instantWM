@@ -24,23 +24,31 @@ void keyrelease(XEvent *e) { (void)e; /* unused */ }
 
 void grabkeys(void) {
     updatenumlockmask();
+
+    XUngrabKey(dpy, AnyKey, AnyModifier, root);
+
+    if (isoverview)
+        grabkeys_r(okeys, okeys_len);
+
+    grabkeys_r(keys, keys_len);
+
+    /* add keyboard shortcuts without modifiers when tag is empty */
+    if (!selmon->sel)
+        grabkeys_r(dkeys, dkeys_len);
+}
+
+void grabkeys_r(const Key *keys, size_t keys_len) {
     {
-        unsigned int i;
-        unsigned int j;
-        unsigned int k;
+        unsigned int i, j, k;
         unsigned int modifiers[] = {0, LockMask, numlockmask,
                                     numlockmask | LockMask};
-        int start;
-        int end;
-        int skip;
+        int start, end, skip;
         KeySym *syms;
 
-        XUngrabKey(dpy, AnyKey, AnyModifier, root);
         XDisplayKeycodes(dpy, &start, &end);
         syms = XGetKeyboardMapping(dpy, start, end - start + 1, &skip);
-        if (!syms) {
+        if (!syms)
             return;
-        }
 
         for (k = start; k <= (unsigned int)end; k++) {
             /* Skip invalid keycodes to prevent X11 BadValue errors */
@@ -59,18 +67,6 @@ void grabkeys(void) {
                     }
                 }
             }
-
-            /* add keyboard shortcuts without modifiers when tag is empty */
-            if (!selmon->sel) {
-                for (i = 0; i < dkeys_len; i++) {
-                    if (dkeys[i].keysym == syms[(k - start) * skip]) {
-                        for (j = 0; j < 4; j++) {
-                            XGrabKey(dpy, k, dkeys[i].mod | modifiers[j], root,
-                                     True, GrabModeAsync, GrabModeAsync);
-                        }
-                    }
-                }
-            }
         }
 
         XFree(syms);
@@ -78,28 +74,26 @@ void grabkeys(void) {
 }
 
 void keypress(XEvent *e) {
+    if (isoverview)
+        keypress_r(e, okeys, okeys_len);
+
+    keypress_r(e, keys, keys_len);
+
+    if (!selmon->sel)
+        keypress_r(e, dkeys, dkeys_len);
+}
+
+void keypress_r(XEvent *e, const Key *keys, size_t keys_len) {
     unsigned int i;
     KeySym keysym;
     XKeyEvent *ev;
 
     ev = &e->xkey;
     keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
-    for (i = 0; i < keys_len; i++) {
+    for (i = 0; i < keys_len; i++)
         if (keysym == keys[i].keysym &&
-            CLEANMASK(keys[i].mod) == CLEANMASK(ev->state) && keys[i].func) {
+            CLEANMASK(keys[i].mod) == CLEANMASK(ev->state) && keys[i].func)
             keys[i].func(&(keys[i].arg));
-        }
-    }
-
-    if (!selmon->sel) {
-        for (i = 0; i < dkeys_len; i++) {
-            if (keysym == dkeys[i].keysym &&
-                CLEANMASK(dkeys[i].mod) == CLEANMASK(ev->state) &&
-                dkeys[i].func) {
-                dkeys[i].func(&(dkeys[i].arg));
-            }
-        }
-    }
 }
 
 void uppress(const Arg *arg) {

@@ -79,6 +79,7 @@ int pausedraw = 0;
 
 int statuswidth = 0;
 
+int isoverview = 0;
 static int isdesktop = 0;
 
 int screen;
@@ -231,6 +232,12 @@ void distributeclients(const Arg *arg) {
 }
 
 void focus(Client *c) {
+    if (isoverview && (selmon->lt[selmon->sellt] != &layouts[6]) &&
+        (selmon->pertag->current_tag != 0)) {
+        isoverview = 0;
+        grabkeys();
+    }
+
     resetcursor();
     if (!c || !ISVISIBLE(c) || HIDDEN(c)) {
         for (c = selmon->stack; c && (!ISVISIBLE(c) || HIDDEN(c));
@@ -423,26 +430,31 @@ int gettextprop(Window w, Atom atom, char *text, unsigned int size) {
 
 void grabbuttons(Client *c, int focused) {
     updatenumlockmask();
+    XUngrabButton(dpy, AnyButton, AnyModifier, c->win);
+
+    if (isoverview)
+        grabbuttons_r(obuttons, obuttons_len, c, focused);
+
+    grabbuttons_r(buttons, buttons_len, c, focused);
+}
+
+void grabbuttons_r(const Button *buttons, size_t buttons_len, Client *c,
+                   int focused) {
     {
-        unsigned int i;
-        unsigned int j;
+        unsigned int i, j;
         unsigned int modifiers[] = {0, LockMask, numlockmask,
                                     numlockmask | LockMask};
-        XUngrabButton(dpy, AnyButton, AnyModifier, c->win);
-        if (!focused) {
+        if (!focused)
             XGrabButton(dpy, AnyButton, AnyModifier, c->win, False, BUTTONMASK,
                         GrabModeSync, GrabModeSync, None, None);
-        }
-        for (i = 0; i < buttons_len; i++) {
-            if (buttons[i].click == ClkClientWin) {
-                for (j = 0; j < LENGTH(modifiers); j++) {
+
+        for (i = 0; i < buttons_len; i++)
+            if (buttons[i].click == ClkClientWin)
+                for (j = 0; j < LENGTH(modifiers); j++)
                     XGrabButton(dpy, buttons[i].button,
                                 buttons[i].mask | modifiers[j], c->win, False,
                                 BUTTONMASK, GrabModeAsync, GrabModeSync, None,
                                 None);
-                }
-            }
-        }
     }
 }
 

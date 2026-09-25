@@ -822,6 +822,14 @@ static void handle_client_click(XButtonPressedEvent *ev, Client *c,
 }
 
 void buttonpress(XEvent *e) {
+
+    if (isoverview)
+        buttonpress_r(e, obuttons, obuttons_len);
+
+    buttonpress_r(e, buttons, buttons_len);
+}
+
+void buttonpress_r(XEvent *e, const Button *buttons, size_t buttons_len) {
     unsigned int i;
     unsigned int click;
     Arg arg = {0};
@@ -857,11 +865,11 @@ void buttonpress(XEvent *e) {
             buttons[i].button == ev->button &&
             CLEANMASK(buttons[i].mask) == CLEANMASK(ev->state)) {
             buttons[i].func((click == ClkTagBar || click == ClkWinTitle ||
-                             click == ClkCloseButton || click == ClkShutDown ||
-                             click == ClkSideBar || click == ClkResizeWidget) &&
-                                    buttons[i].arg.i == 0
-                                ? &arg
-                                : &buttons[i].arg);
+                         click == ClkCloseButton || click == ClkShutDown ||
+                         click == ClkSideBar || click == ClkResizeWidget) &&
+                                buttons[i].arg.i == 0
+                            ? &arg
+                            : &buttons[i].arg);
         }
     }
 }

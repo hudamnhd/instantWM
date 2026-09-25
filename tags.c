@@ -676,6 +676,8 @@ void toggle_overview(const Arg *arg) {
         if (selmon->lt[selmon->sellt] != (Layout *)&layouts[6]) {
             setlayout(&((Arg){.v = &layouts[6]}));
         }
+        isoverview = 1;
+        grabkeys();
         focus(c);
     }
     selmon->pertag->prevtag = tmptag;
