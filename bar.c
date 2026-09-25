@@ -322,11 +322,16 @@ static void draw_close_button(Client *c, int x) {
     int ishover =
         selmon->gesture != GestureCloseButton ? SchemeNoHover : SchemeHover;
 
+    const char *utf8str = "󱎘";
+
     if (c->islocked) {
+        utf8str = "󰌾";
         drw_setscheme(drw, closebuttonscheme[ishover][SchemeCloseLocked]);
     } else if (c == selmon->fullscreen) {
+        utf8str = "󰁄";
         drw_setscheme(drw, closebuttonscheme[ishover][SchemeCloseFullscreen]);
     } else {
+        utf8str = "󱎘";
         drw_setscheme(drw, closebuttonscheme[ishover][SchemeCloseNormal]);
     }
 
@@ -341,6 +346,15 @@ static void draw_close_button(Client *c, int x) {
                        !ishover * CLOSE_BUTTON_DETAIL,
                    CLOSE_BUTTON_WIDTH,
                    CLOSE_BUTTON_DETAIL + !ishover * CLOSE_BUTTON_DETAIL);
+
+    int utf8strlen = strlen(utf8str);
+    XftDraw *d = NULL;
+    d = XftDrawCreate(drw->dpy, drw->drawable,
+                      DefaultVisual(drw->dpy, drw->screen),
+                      DefaultColormap(drw->dpy, drw->screen));
+    XftDrawStringUtf8(d, &drw->scheme[ColFg], drw->fonts->xfont, x + bh / 6 + 6,
+                      (bh - 20) / 2 + 15 - !ishover * 4, (XftChar8 *)utf8str,
+                      utf8strlen);
 }
 
 /* Helper: Draw a single window title */
