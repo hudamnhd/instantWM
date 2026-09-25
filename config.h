@@ -53,9 +53,9 @@ int decorhints        = 0;   /* 1 means respect decoration hints */
 const Layout layouts[] = {
 	/* symbol     arrange function */
 	{ "[]=",      tile },    /* first entry is default */
-	{ "HHH",      grid },
 	{ "><>",      NULL },    /* no layout function means floating behavior */
 	{ "[M]",      monocle },
+	{ "HHH",      grid },
 	{ "|||",      tcl },
 	{ "H[]",      deck },
 	{ "O",        overviewlayout },
