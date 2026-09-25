@@ -643,31 +643,21 @@ void setlayout(const Arg *arg) {
 }
 
 void cyclelayout(const Arg *arg) {
-    Layout *l;
-    for (l = (Layout *)layouts; l != selmon->lt[selmon->sellt]; l++) {
-        ;
-    }
-    if (arg->i > 0) {
-        if (l->symbol && (l + 1)->symbol) {
-            if ((l + 1)->arrange == &overviewlayout) {
-                setlayout(&((Arg){.v = (l + 2)}));
-            } else {
-                setlayout(&((Arg){.v = (l + 1)}));
-            }
-        } else {
-            setlayout(&((Arg){.v = layouts}));
-        }
-    } else {
-        if (l != layouts && (l - 1)->symbol) {
-            if ((l - 1)->arrange == &overviewlayout) {
-                setlayout(&((Arg){.v = (l - 2)}));
-            } else {
-                setlayout(&((Arg){.v = (l - 1)}));
-            }
-        } else {
-            setlayout(&((Arg){.v = &layouts[layouts_len - 2]}));
+    static const int orders[][2] = {
+        {0, 2}, {1, 4}, {3, 5}, {7, 8}, {6, 1},
+    };
+
+    const int *order = orders[arg->ui];
+    int n = 2;
+
+    for (int i = 0; i < n; i++) {
+        if (selmon->lt[selmon->sellt] == &layouts[order[i]]) {
+            setlayout(&(const Arg){.v = &layouts[order[(i + 1) % n]]});
+            return;
         }
     }
+
+    setlayout(&(const Arg){.v = &layouts[order[0]]});
 }
 
 void incnmaster(const Arg *arg) {
