@@ -410,6 +410,7 @@ void tile(Monitor *m) {
     unsigned int my;
     unsigned int ty;
     unsigned int framecount;
+    float mfacts = 0, sfacts = 0;
     Client *c;
 
     if (animated && clientcount() > 5) {
@@ -419,7 +420,10 @@ void tile(Monitor *m) {
     }
 
     for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++) {
-        ;
+        if (n < m->nmaster)
+            mfacts += c->cfact;
+        else
+            sfacts += c->cfact;
     }
     if (n == 0) {
         return;
@@ -435,12 +439,12 @@ void tile(Monitor *m) {
             return;
         }
     }
+
     for (i = my = ty = 0, c = nexttiled(m->clients); c;
-         c = nexttiled(c->next), i++) {
+         c = nexttiled(c->next), i++)
         if (i < m->nmaster) {
             // client is in the master
-            h = (m->wh - my) / (MIN(n, m->nmaster) - i);
-
+            h = (m->wh - my) * (c->cfact / mfacts);
             if (n == 2) {
                 animateclient(c, m->wx, m->wy + my, mw - (2 * c->border_width),
                               h - (2 * c->border_width), 0, 0);
@@ -451,20 +455,19 @@ void tile(Monitor *m) {
                     mw = c->w + c->border_width * 2;
                 }
             }
-            if (my + HEIGHT(c) < m->wh) {
+            if (my + HEIGHT(c) < m->wh)
                 my += HEIGHT(c);
-            }
+            mfacts -= c->cfact;
         } else {
             // client is in the stack
-            h = (m->wh - ty) / (n - i);
+            h = (m->wh - ty) * (c->cfact / sfacts);
             animateclient(c, m->wx + mw, m->wy + ty,
                           m->ww - mw - (2 * c->border_width),
                           h - (2 * c->border_width), framecount, 0);
-            if (ty + HEIGHT(c) < m->wh) {
+            if (ty + HEIGHT(c) < m->wh)
                 ty += HEIGHT(c);
-            }
+            sfacts -= c->cfact;
         }
-    }
 }
 
 /* Moved functions */
@@ -684,7 +687,28 @@ void setmfact(const Arg *arg) {
     }
 
     arrange(selmon);
-    if (tmpanim) {
+    if (tmpanim)
         animated = 1;
-    }
+}
+
+void setcfact(const Arg *arg) {
+    float f;
+    Client *c;
+
+    c = selmon->sel;
+
+    if (!arg || !c || !selmon->lt[selmon->sellt]->arrange)
+        return;
+    if (arg->f == 0)
+        f = 1.0;
+    else if (arg->f > 4.0)
+        f = arg->f - 4.0;
+    else
+        f = arg->f + c->cfact;
+    if (f < 0.25)
+        f = 0.25;
+    else if (f > 4.0)
+        f = 4.0;
+    c->cfact = f;
+    arrange(selmon);
 }

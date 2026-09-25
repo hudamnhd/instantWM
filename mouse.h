@@ -43,6 +43,10 @@ void dragtag(const Arg *arg);
 void forceresizemouse(const Arg *arg);
 void resizemouse(const Arg *arg);
 void resizeaspectmouse(const Arg *arg);
+void moveorplace(const Arg *arg);
+void placemouse(const Arg *arg);
+void dragfact(const Arg *arg);
+void resizeorfacts(const Arg *arg);
 
 /* Helper functions for drawwindow */
 int parse_slop_output(const char *output, int dimensions[4]);

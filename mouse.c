@@ -392,6 +392,271 @@ void movemouse(const Arg *arg) {
     handle_client_monitor_switch(c);
 }
 
+Client *recttoclient(int x, int y, int w, int h, int include_floating) {
+    Client *c, *r = NULL;
+    int a, area = 1;
+
+    for (c = selmon->stack; c; c = c->snext) {
+        if (!ISVISIBLE(c) || (c->isfloating && !include_floating))
+            continue;
+        if ((a = INTERSECTC(x, y, w, h, c)) >= area) {
+            area = a;
+            r = c;
+        }
+    }
+    return r;
+}
+
+void placemouse(const Arg *arg) {
+    int x, y, px, py, ocx, ocy, nx = -9999, ny = -9999, freemove = 0;
+    Client *c, *r = NULL, *at, *prevr;
+    Monitor *m;
+    XEvent ev;
+    XWindowAttributes wa;
+    Time lasttime = 0;
+    int attachmode, prevattachmode;
+    attachmode = prevattachmode = -1;
+    int tmpnoanim;
+
+    if (animated) {
+        animated = 0;
+        tmpnoanim = 1;
+    } else {
+        tmpnoanim = 0;
+    }
+
+    if (!(c = selmon->sel) || !c->mon->lt[c->mon->sellt]->arrange)
+        return; /* no support for placemouse when floating layout is used */
+    if (c->is_fullscreen)
+        return; /* no support placing fullscreen windows by mouse */
+    restack(selmon);
+    prevr = c;
+    if (XGrabPointer(dpy, root, False, MOUSEMASK, GrabModeAsync, GrabModeAsync,
+                     None, cursor[CurMove]->cursor, CurrentTime) != GrabSuccess)
+        return;
+
+    c->isfloating = 0;
+    c->beingmoved = 1;
+
+    XGetWindowAttributes(dpy, c->win, &wa);
+    ocx = wa.x;
+    ocy = wa.y;
+
+    if (arg->i == 2) // warp cursor to client center
+        XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, WIDTH(c) / 2,
+                     HEIGHT(c) / 2);
+
+    if (!getrootptr(&x, &y))
+        return;
+
+    do {
+        XMaskEvent(dpy, MOUSEMASK | ExposureMask | SubstructureRedirectMask,
+                   &ev);
+        switch (ev.type) {
+        case ConfigureRequest:
+        case Expose:
+        case MapRequest:
+            handler[ev.type](&ev);
+            break;
+        case MotionNotify:
+            if ((ev.xmotion.time - lasttime) <= (1000 / 60))
+                continue;
+            lasttime = ev.xmotion.time;
+
+            nx = ocx + (ev.xmotion.x - x);
+            ny = ocy + (ev.xmotion.y - y);
+
+            if (!freemove && (abs(nx - ocx) > snap || abs(ny - ocy) > snap))
+                freemove = 1;
+
+            if (freemove)
+                XMoveWindow(dpy, c->win, nx, ny);
+
+            if ((m = recttomon(ev.xmotion.x, ev.xmotion.y, 1, 1)) &&
+                m != selmon)
+                selmon = m;
+
+            if (arg->i == 1) { // tiled position is relative to the client
+                               // window center point
+                px = nx + wa.width / 2;
+                py = ny + wa.height / 2;
+            } else { // tiled position is relative to the mouse cursor
+                px = ev.xmotion.x;
+                py = ev.xmotion.y;
+            }
+
+            r = recttoclient(px, py, 1, 1, 0);
+
+            if (!r || r == c)
+                break;
+
+            if ((((float)(r->y + r->h - py) / r->h) >
+                     ((float)(r->x + r->w - px) / r->w) &&
+                 (abs(r->y - py) < r->h / 2)) ||
+                (abs(r->x - px) < r->w / 2))
+                attachmode = 1; // above
+            else
+                attachmode = 0; // below
+
+            if ((r && r != prevr) || (attachmode != prevattachmode)) {
+                detachstack(c);
+                detach(c);
+                if (c->mon != r->mon) {
+                    arrangemon(c->mon);
+                    c->tags = r->mon->tagset[r->mon->seltags];
+                }
+
+                c->mon = r->mon;
+                r->mon->sel = r;
+
+                if (attachmode) {
+                    if (r == r->mon->clients)
+                        attach(c);
+                    else {
+                        for (at = r->mon->clients; at->next != r; at = at->next)
+                            ;
+                        c->next = at->next;
+                        at->next = c;
+                    }
+                } else {
+                    c->next = r->next;
+                    r->next = c;
+                }
+
+                attachstack(c);
+                arrangemon(r->mon);
+                prevr = r;
+                prevattachmode = attachmode;
+            }
+            break;
+        }
+    } while (ev.type != ButtonRelease);
+    XUngrabPointer(dpy, CurrentTime);
+
+    if ((m = recttomon(ev.xmotion.x, ev.xmotion.y, 1, 1)) && m != c->mon) {
+        detach(c);
+        detachstack(c);
+        arrangemon(c->mon);
+        c->mon = m;
+        c->tags = m->tagset[m->seltags];
+        attach(c);
+        attachstack(c);
+        selmon = m;
+    }
+
+    focus(c);
+    c->beingmoved = 0;
+
+    if (nx != -9999)
+        resize(c, nx, ny, c->w, c->h, 0);
+    arrangemon(c->mon);
+
+    if (tmpnoanim) {
+        animated = 1;
+        tmpnoanim = 0;
+    }
+}
+
+void moveorplace(const Arg *arg) {
+    if ((!selmon->lt[selmon->sellt]->arrange ||
+         (selmon->sel && selmon->sel->isfloating)))
+        movemouse(arg);
+    else
+        placemouse(arg);
+}
+
+void dragfact(const Arg *arg) {
+    unsigned int n;
+    int px, py; // pointer coordinates
+    int dist_x, dist_y;
+    int horizontal = 0; // layout configuration
+    float mfact, cfact, cf, cw, ch, mw, mh;
+    Client *c;
+    Monitor *m = selmon;
+    XEvent ev;
+    Time lasttime = 0;
+    int tmpnoanim;
+
+    if (animated) {
+        animated = 0;
+        tmpnoanim = 1;
+    } else {
+        tmpnoanim = 0;
+    }
+
+    for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++)
+        ;
+    if (!(c = m->sel) || !n || !m->lt[m->sellt]->arrange)
+        return;
+
+    if (XGrabPointer(dpy, root, False, MOUSEMASK, GrabModeAsync, GrabModeAsync,
+                     None, cursor[CurResize]->cursor,
+                     CurrentTime) != GrabSuccess)
+        return;
+
+    if (!getrootptr(&px, &py))
+        return;
+
+    cf = c->cfact;
+    ch = c->h;
+    cw = c->w;
+    mw = m->ww * m->mfact;
+    mh = m->wh * m->mfact;
+
+    do {
+        XMaskEvent(dpy, MOUSEMASK | ExposureMask | SubstructureRedirectMask,
+                   &ev);
+        switch (ev.type) {
+        case ConfigureRequest:
+        case Expose:
+        case MapRequest:
+            handler[ev.type](&ev);
+            break;
+        case MotionNotify:
+            if ((ev.xmotion.time - lasttime) <= (1000 / 40))
+                continue;
+            lasttime = ev.xmotion.time;
+
+            dist_x = ev.xmotion.x - px;
+            dist_y = ev.xmotion.y - py;
+
+            if (horizontal) {
+                cfact = (float)cf * (cw + dist_x) / cw;
+                mfact = (float)(mh + dist_y) / m->wh;
+            } else {
+                cfact = (float)cf * (ch - dist_y) / ch;
+                mfact = (float)(mw + dist_x) / m->ww;
+            }
+
+            c->cfact = MAX(0.25, MIN(4.0, cfact));
+            m->mfact = MAX(0.05, MIN(0.95, mfact));
+            arrangemon(m);
+            break;
+        }
+    } while (ev.type != ButtonRelease);
+
+    XUngrabPointer(dpy, CurrentTime);
+    while (XCheckMaskEvent(dpy, EnterWindowMask, &ev))
+        ;
+
+    if (tmpnoanim) {
+        animated = 1;
+        tmpnoanim = 0;
+    }
+}
+
+void resizeorfacts(const Arg *arg) {
+    Monitor *m = selmon;
+
+    if (!m->sel)
+        return;
+
+    if (!m->lt[m->sellt]->arrange || m->sel->isfloating)
+        resizemouse(arg);
+    else
+        dragfact(arg);
+}
+
 /* Data structure for gesturemouse motion handler */
 typedef struct {
     int *lasty;

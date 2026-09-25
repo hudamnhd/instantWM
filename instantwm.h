@@ -25,6 +25,9 @@
 #define INTERSECT(x, y, w, h, m)                                               \
     (MAX(0, MIN((x) + (w), (m)->wx + (m)->ww) - MAX((x), (m)->wx)) *           \
      MAX(0, MIN((y) + (h), (m)->wy + (m)->wh) - MAX((y), (m)->wy)))
+#define INTERSECTC(X, Y, W, H, Z)                                              \
+    (MAX(0, MIN((X) + (W), (Z)->x + (Z)->w) - MAX((X), (Z)->x)) *              \
+     MAX(0, MIN((Y) + (H), (Z)->y + (Z)->h) - MAX((Y), (Z)->y)))
 #define ISVISIBLE(C)                                                           \
     ((C->tags & C->mon->tagset[C->mon->seltags]) || C->issticky)
 #define HIDDEN(C) ((getstate(C->win) == IconicState))
@@ -251,6 +254,7 @@ typedef struct Client Client;
 struct Client {
     char name[256];
     float mina, maxa;
+    float cfact;
     int x, y, w, h;
     int saved_float_x, saved_float_y, saved_float_width,
         saved_float_height; /* stored float geometry, used on mode revert */
@@ -261,6 +265,7 @@ struct Client {
     int isfixed, isfloating, isurgent, neverfocus, oldstate, is_fullscreen,
         isfakefullscreen, islocked, issticky, snapstatus;
     char scratchpad_name[SCRATCHPAD_NAME_LEN];
+    int beingmoved;
     unsigned int scratchpad_restore_tags;
     Client *next;
     Client *snext;
@@ -479,6 +484,7 @@ void setlayout(const Arg *arg);
 void commandlayout(const Arg *arg);
 void commandprefix(const Arg *arg);
 void setmfact(const Arg *arg);
+void setcfact(const Arg *arg);
 void setup(void);
 void seturgent(Client *c, int urg);
 void show(Client *c);
