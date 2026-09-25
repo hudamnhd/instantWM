@@ -31,9 +31,9 @@ const char *tagsalt[] = { "", "", "", "", "", "", "", "󰈙
 
 const char scratchpadclass[] = "scratchpad_default";
 
-const char *upvol[] = {"/usr/share/instantassist/utils/p.sh", "+", NULL};
-const char *downvol[] = {"/usr/share/instantassist/utils/p.sh", "-", NULL};
-const char *mutevol[] = {"/usr/share/instantassist/utils/p.sh", "m", NULL};
+const char *downvol[] = {"pactl", "set-sink-volume", "@DEFAULT_SINK@", "-10%", NULL};
+const char *upvol[]   = {"pactl", "set-sink-volume", "@DEFAULT_SINK@", "+10%", NULL};
+const char *mutevol[] = {"pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle ", NULL};
 
 /* NOTE:
  * `rules` must be defined in exactly one .c translation unit (see `config.c`)
@@ -81,13 +81,15 @@ const Layout layouts[] = {
 
 /* commands */
 char instantmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-const char *instantmenucmd[]     = { "dmenu_run", "-m", instantmenumon, "-c", "-l", "30", "-g", "2", "-bw", "2", NULL };
-const char *instantshutdowncmd[] = {"rofi-custom", "power", NULL};
-const char *quickmenucmd[]       = {"rofi-custom", NULL};
-const char *startmenucmd[]       = {"rofi", "-show", "drun", "-hover-select", "-me-select-entry", "", "-me-accept-entry", "MousePrimary", NULL};
-const char *termcmd[]            = {"st", NULL};
-const char *slockcmd[]           = {"slock", NULL};
-const char *termscratchcmd[]     = {"st", "-c", scratchpadclass, NULL};
+const char *instantmenucmd[]       = { "dmenu_run", "-m", instantmenumon, "-c", "-l", "30", "-g", "2", "-border_width", "2", NULL };
+const char *instantshutdowncmd[]   = {"rofi-custom", "power", NULL};
+const char *quickmenucmd[]         = {"rofi-custom", NULL};
+const char *startmenucmd[]         = {"rofi", "-show", "drun", "-hover-select", "-me-select-entry", "", "-me-accept-entry", "MousePrimary", NULL};
+const char *termcmd[]              = {"st", NULL};
+const char *iswitchcmd[]           = {"iswitch", NULL};
+const char *slockcmd[]             = {"slock", NULL};
+const char *termscratchcmd[]       = {"st", "-c", scratchpadclass, NULL};
+static const char *screenshotcmd[] = {"rofi-custom", "screenshot", NULL};
 
 #include "push.c"
 
@@ -147,16 +149,10 @@ Xcommand commands[] = {
 
 Key dkeys[] = {
     /* modifier  key        function     argument */
-    {0, XK_h,      viewtoleft,  {0}},
-    {0, XK_l,      viewtoright, {0}},
-    {0, XK_k,      shiftview,   {.i = +1}},
-    {0, XK_j,      shiftview,   {.i = -1}},
-
     {0, XK_Left,   viewtoleft,  {0}},
     {0, XK_Right,  viewtoright, {0}},
     {0, XK_Up,     shiftview,   {.i = +1}},
     {0, XK_Down,   shiftview,   {.i = -1}},
-
     {0, XK_1,      view,        {.ui = 1 << 0}},
     {0, XK_2,      view,        {.ui = 1 << 1}},
     {0, XK_3,      view,        {.ui = 1 << 2}},
@@ -170,156 +166,194 @@ Key dkeys[] = {
 };
 
 Key keys[] = {
-    /* modifier                             key                       function                    argument */
-    {MODKEY|Mod1Mask,                       XK_j,                     keyresize,                  {.i = 0}},
-    {MODKEY|Mod1Mask,                       XK_k,                     keyresize,                  {.i = 1}},
-    {MODKEY|Mod1Mask,                       XK_l,                     keyresize,                  {.i = 2}},
-    {MODKEY|Mod1Mask,                       XK_h,                     keyresize,                  {.i = 3}},
-    {MODKEY|ControlMask,                    XK_d,                     distributeclients,          {0}},
-    {MODKEY|ShiftMask,                      XK_d,                     drawwindow,                 {0}},
+    /* modifier                              key              function                    argument */
+    { 0,                                     XK_Caps_Lock,    0,                          {0} },
+    { MODKEY,                                XK_Up,           upkey,                      {.i = -1} },
+    { MODKEY|Mod1Mask,                       XK_Up,           moveresize,                 {.i = 1} },
+    { MODKEY|ControlMask,                    XK_Up,           uppress,                    {0} },
+    { MODKEY|ShiftMask,                      XK_Up,           direction_focus,            {.ui = 0} },
+	  { MODKEY|ShiftMask|Mod1Mask,             XK_Up,           setcfact,                   {.f = -0.25}},
+    { MODKEY|ShiftMask|ControlMask,          XK_Up,           keyresize,                  {.i = 1} },
+    { MODKEY,                                XK_Down,         downkey,                    {.i = +1} },
+    { MODKEY|Mod1Mask,                       XK_Down,         moveresize,                 {.i = 0} },
+    { MODKEY|ControlMask,                    XK_Down,         downpress,                  {0} },
+    { MODKEY|ShiftMask,                      XK_Down,         direction_focus,            {.ui = 2 } },
+	  { MODKEY|ShiftMask|Mod1Mask,             XK_Down,         setcfact,                   {.f = +0.25}},
+    { MODKEY|ShiftMask|ControlMask,          XK_Down,         keyresize,                  {.i = 0} },
+    { MODKEY,                                XK_Left,         animleft,                   {.f = -0.05} },
+    { MODKEY|Mod1Mask,                       XK_Left,         moveresize,                 {.i = 3} },
+    { MODKEY|ControlMask,                    XK_Left,         tagtoleft,                  {0} },
+    { MODKEY|ShiftMask,                      XK_Left,         direction_focus,            {.ui = 3 } },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_Left,         incnmaster,                 {.i = -1} },
+    { MODKEY|ShiftMask|ControlMask,          XK_Left,         keyresize,                  {.i = 3} },
+    { MODKEY,                                XK_Right,        animright,                  {.f = +0.05} },
+    { MODKEY|Mod1Mask,                       XK_Right,        moveresize,                 {.i = 2} },
+    { MODKEY|ControlMask,                    XK_Right,        tagtoright,                 {0} },
+    { MODKEY|ShiftMask,                      XK_Right,        direction_focus,            {.ui = 1} },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_Right,        incnmaster,                 {.i = +1} },
+    { MODKEY|ShiftMask|ControlMask,          XK_Right,        keyresize,                  {.i = 2} },
 
-    {MODKEY|ControlMask|Mod1Mask,           XK_r,                     redrawwin,                  {0}},
-    {MODKEY,                                XK_w,                     setoverlay,                 {0}},
-    {MODKEY|ControlMask,                    XK_w,                     createoverlay,              {0}},
-    {MODKEY|Mod1Mask|ControlMask|ShiftMask, XK_Tab,                   alttabfree,                 {0}},
-    {MODKEY|ControlMask,                    XK_h,                     hide_window,                {0}},
-    {MODKEY|Mod1Mask|ControlMask,           XK_h,                     unhide_all,                 {0}},
-    {MODKEY,                                XK_b,                     togglebar,                  {0}},
-    {MODKEY,                                XK_j,                     focusstack,                 {.i = +1}},
-    {MODKEY,                                XK_Down,                  downkey,                    {.i = +1}},
-    {MODKEY|ShiftMask,                      XK_Down,                  downpress,                  {0}},
-    {MODKEY,                                XK_k,                     focusstack,                 {.i = -1}},
-    {MODKEY,                                XK_Up,                    upkey,                      {.i = -1}},
-    {MODKEY|ShiftMask,                      XK_Up,                    uppress,                    {0}},
-    {MODKEY|ControlMask,                    XK_j,                     pushdown,                   {0}},
-    {MODKEY|ControlMask,                    XK_k,                     pushup,                     {0}},
-    {MODKEY|Mod1Mask,                       XK_s,                     togglealttag,               {.ui = 2}},
-    {MODKEY|ShiftMask|Mod1Mask,             XK_s,                     toggleanimated,             {.ui = 2}},
-    {MODKEY|ControlMask,                    XK_s,                     togglesticky,               {0}},
-    {MODKEY|ShiftMask,                      XK_s,                     scratchpad_make,            {.v = "default"}},
-    {MODKEY,                                XK_s,                     scratchpad_toggle,          {.v = "default"}},
-    {MODKEY|ShiftMask,                      XK_f,                     togglefakefullscreen,       {0}},
-    {MODKEY|ControlMask,                    XK_f,                     temp_fullscreen,            {0}},
-    {MODKEY|ShiftMask|Mod1Mask,             XK_d,                     toggledoubledraw,           {0}},
-    {MODKEY|ShiftMask,                      XK_w,                     warp_to_focus,              {0}},
-    {MODKEY|Mod1Mask,                       XK_w,                     center_window,              {0}},
-    {MODKEY|ShiftMask|ControlMask,          XK_s,                     toggleshowtags,             {.ui = 2}},
-    {MODKEY,                                XK_i,                     incnmaster,                 {.i = +1}},
-    {MODKEY,                                XK_d,                     incnmaster,                 {.i = -1}},
-    {MODKEY,                                XK_h,                     setmfact,                   {.f = -0.05}},
-    {MODKEY,                                XK_l,                     setmfact,                   {.f = +0.05}},
-    {MODKEY|ShiftMask,                      XK_Return,                zoom,                       {0}},
-    {MODKEY,                                XK_Tab,                   lastview,                   {0}},
-    {MODKEY|ShiftMask,                      XK_Tab,                   focus_last_client,          {0}},
-    {MODKEY|Mod1Mask,                       XK_Tab,                   followview,                 {0}},
-    {MODKEY,                                XK_q,                     shutkill,                   {0}},
-    {Mod1Mask,                              XK_F4,                    killclient,                 {0}},
-    {MODKEY,                                XK_F2,                    toggleprefix,               {0}},
-    {MODKEY,                                XK_t,                     setlayout,                  {.v = &layouts[0]}},
-    {MODKEY,                                XK_f,                     setlayout,                  {.v = &layouts[2]}},
-    {MODKEY,                                XK_m,                     setlayout,                  {.v = &layouts[3]}},
-    {MODKEY|ShiftMask,                      XK_m,                     movemouse,                  {0}},
-    {MODKEY|Mod1Mask,                       XK_m,                     resizemouse,                {0}},
-    {MODKEY,                                XK_c,                     setlayout,                  {.v = &layouts[1]}},
+    { MODKEY,                                XK_Home,         setmfact,                   {.f = -0.05} },
+    { MODKEY|Mod1Mask,                       XK_Home,         incnmaster,                 {.i = -1} },
+    { MODKEY|ShiftMask,                      XK_Home,         pushup,                     {0} },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_Home,         setmfact,                   {.f = 0} },
+    { MODKEY|ShiftMask|ControlMask,          XK_Home,         moveleft,                   {0} },
+    { MODKEY,                                XK_End,          setmfact,                   {.f = +0.05} },
+    { MODKEY|Mod1Mask,                       XK_End,          incnmaster,                 {.i = +1} },
+    { MODKEY|ShiftMask,                      XK_End,          pushdown,                   {0} },
+	  { MODKEY|ShiftMask|Mod1Mask,             XK_End,          setcfact,                   {.f = 0} },
+    { MODKEY|ShiftMask|ControlMask,          XK_End,          moveright,                  {0} },
 
-    {MODKEY,                                XK_Left,                  animleft,                   {0}},
-    {MODKEY,                                XK_Right,                 animright,                  {0}},
+    { MODKEY,                                XK_Delete,       toggle_overview,            {.ui = ~0} },
+    { MODKEY|Mod1Mask,                       XK_Delete,       moveorplace,                {0} },
+    { MODKEY|ShiftMask,                      XK_Delete,       toggle_floating,            {0} },
+    { MODKEY|ControlMask,                    XK_Delete,       resizeorfacts,              {0} },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_Delete,       forceresizemouse,           {0} },
+    { MODKEY|ShiftMask|ControlMask,          XK_Delete,       resizeaspectmouse,          {0} },
+    { MODKEY,                                XK_BackSpace,    toggle_fullscreen_overview, {.ui = ~0}},
+    { MODKEY|Mod1Mask,                       XK_BackSpace,    spawn,                      {.v = slockcmd} },
+    { MODKEY,                                XK_Prior,        focusstack,                 {.i = -1} },
+    { MODKEY|ControlMask,                    XK_Prior,        shiftview,                  {.i = -1} },
+    { MODKEY,                                XK_Next,         focusstack,                 {.i = +1} },
+    { MODKEY|ControlMask,                    XK_Next,         shiftview,                  {.i = +1} },
+    { MODKEY,                                XK_Return,       spawn,                      {.v = termcmd} },
+    { MODKEY|Mod1Mask,                       XK_Return,       togglefakefullscreen,       {0} },
+    { MODKEY|ShiftMask,                      XK_Return,       zoom,                       {0} },
+    { MODKEY|ControlMask,                    XK_Return,       temp_fullscreen,            {0} },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_Return,       distributeclients,          {0} },
+    { MODKEY|ShiftMask|ControlMask,          XK_Return,       center_window,              {0} },
+    { Mod1Mask,                              XK_Tab,          spawn,                      {.v = iswitchcmd} },
+    { MODKEY,                                XK_Tab,          lastview,                   {0} },
+    { MODKEY|ShiftMask,                      XK_Tab,          followview,                 {0} },
+    { MODKEY|ControlMask,                    XK_Tab,          focus_last_client,          {0} },
+    { MODKEY|ShiftMask|ControlMask,          XK_Tab,          desktopset,                 {0} },
+    { MODKEY|Mod1Mask|ControlMask|ShiftMask, XK_Tab,          alttabfree,                 {0}},
+    { MODKEY,                                XK_space,        spacetoggle,                {0} },
+    { MODKEY|ShiftMask,                      XK_space,        toggle_floating,            {0} },
 
-    {MODKEY,                                XK_e,                     toggle_overview,            {.ui = ~0}},
-    {MODKEY|ShiftMask,                      XK_e,                     toggle_fullscreen_overview, {.ui = ~0}},
+    { MODKEY,                                XK_F1,           toggleprefix,               {0}},
+    { MODKEY,                                XK_F2,           winview,                    {0}},
+    { Mod1Mask,                              XK_F4,           killclient,                 {0} },
+    { MODKEY,                                XK_Escape,       shutkill,                   {0} },
+    { MODKEY|ControlMask,                    XK_Escape,       quit,                       {0} },
+    { MODKEY,                                XK_grave,        movemouse,                  {0} },
+    { MODKEY|ShiftMask,                      XK_grave,        resizemouse,                {0} },
+    { MODKEY|ControlMask,                    XK_grave,        resizemouse,                {0} },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_grave,        forceresizemouse,           {0} },
+    { MODKEY|ShiftMask|ControlMask,          XK_grave,        resizeaspectmouse,          {0} },
+    { MODKEY,                                XK_apostrophe,   cyclelayout,                {.ui = 0} },
+    { MODKEY|Mod1Mask,                       XK_apostrophe,   cyclelayout,                {.ui = 1} },
+    { MODKEY|ShiftMask,                      XK_apostrophe,   cyclelayout,                {.ui = 2} },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_apostrophe,   cyclelayout,                {.ui = 3} },
+    { MODKEY|ShiftMask|ControlMask,          XK_apostrophe,   setlayout,                  {.ui = 4} },
+    { MODKEY,                                XK_minus,        setoverlay,                 {0} },
+    { MODKEY|Mod1Mask,                       XK_minus,        toggleshowtags,             {.ui = 2 } },
+    { MODKEY|ShiftMask,                      XK_minus,        createoverlay,              {0} },
+    { MODKEY|ControlMask,                    XK_minus,        togglesticky,               {0} },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_minus,        toggleanimated,             {.ui = 2 } },
+    { MODKEY|ShiftMask|ControlMask,          XK_minus,        drawwindow,                 {0} },
+    { MODKEY,                                XK_equal,        scratchpad_toggle,          {.v = "default"}},
+    { MODKEY|Mod1Mask,                       XK_equal,        togglealttag,               {.ui = 2 } },
+    { MODKEY|ShiftMask,                      XK_equal,        scratchpad_make,            {.v = "default"}},
+    { MODKEY|ControlMask,                    XK_equal,        warp_to_focus,              {0} },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_equal,        toggledoubledraw,           {0} },
+    { MODKEY|ShiftMask|ControlMask,          XK_equal,        redrawwin,                  {0} },
+    { MODKEY,                                XK_slash,        spawn,                      {.v = startmenucmd} },
+    { MODKEY|Mod1Mask,                       XK_slash,        spawn,                      {.v = screenshotcmd} },
+    { MODKEY|ShiftMask,                      XK_slash,        spawn,                      {.v = quickmenucmd} },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_slash,        spawn,                      {.v = instantshutdowncmd} },
+    { MODKEY|Mod1Mask,                       XK_semicolon,    tag,                        {.ui = ~0} },
+    { MODKEY|ControlMask,                    XK_semicolon,    view,                       {.ui = ~0} },
+    { MODKEY|ShiftMask|Mod1Mask,             XK_semicolon,    togglebar,                  {0} },
+    { MODKEY|Mod1Mask,                       XK_0,            setlayout,                  {0} },
+    { MODKEY|ShiftMask,                      XK_0,            hide_window,                {0} },
+    { MODKEY|ControlMask,                    XK_0,            unhide_all,                 {0} },
+    { MODKEY,                                XK_bracketleft,  focusmon,                   {.i = -1} },
+    { MODKEY|Mod1Mask,                       XK_bracketleft,  followmon,                  {.i = -1} },
+    { MODKEY|ShiftMask,                      XK_bracketleft,  tagmon,                     {.i = -1} },
+    { MODKEY,                                XK_bracketright, focusmon,                   {.i = +1} },
+    { MODKEY|Mod1Mask,                       XK_bracketright, followmon,                  {.i = +1} },
+    { MODKEY|ShiftMask,                      XK_bracketright, tagmon,                     {.i = +1} },
+    TAGKEYS(XK_1, 0)
+    TAGKEYS(XK_2, 1)
+    TAGKEYS(XK_3, 2)
+    TAGKEYS(XK_4, 3)
+    TAGKEYS(XK_5, 4)
+    TAGKEYS(XK_6, 5)
+    TAGKEYS(XK_7, 6)
+    TAGKEYS(XK_8, 7)
+    TAGKEYS(XK_9, 8)
+};
 
-    {MODKEY|ControlMask,                    XK_Left,                  direction_focus,            {.ui = 3}},
-    {MODKEY|ControlMask,                    XK_Right,                 direction_focus,            {.ui = 1}},
-    {MODKEY|ControlMask,                    XK_Up,                    direction_focus,            {.ui = 0}},
-    {MODKEY|ControlMask,                    XK_Down,                  direction_focus,            {.ui = 2}},
-
-    {MODKEY|ShiftMask|ControlMask,          XK_Right,                 shiftview,                  {.i = +1}},
-    {MODKEY|ShiftMask|ControlMask,          XK_Left,                  shiftview,                  {.i = -1}},
-
-    {MODKEY|Mod1Mask,                       XK_Left,                  moveleft,                   {0}},
-    {MODKEY|Mod1Mask,                       XK_Right,                 moveright,                  {0}},
-
-    {MODKEY|ShiftMask,                      XK_Left,                  tagtoleft,                  {0}},
-    {MODKEY|ShiftMask,                      XK_Right,                 tagtoright,                 {0}},
-
-    {MODKEY|ShiftMask,                      XK_j,                     moveresize,                 {.i = 0}},
-    {MODKEY|ShiftMask,                      XK_k,                     moveresize,                 {.i = 1}},
-    {MODKEY|ShiftMask,                      XK_l,                     moveresize,                 {.i = 2}},
-    {MODKEY|ShiftMask,                      XK_h,                     moveresize,                 {.i = 3}},
-
-    {MODKEY|ControlMask,                    XK_comma,                 cyclelayout,                {.i = -1}},
-    {MODKEY|ControlMask,                    XK_period,                cyclelayout,                {.i = +1}},
-    {MODKEY,                                XK_p,                     setlayout,                  {0}},
-    {MODKEY|ShiftMask,                      XK_space,                 spacetoggle,                {0}},
-    {MODKEY,                                XK_0,                     view,                       {.ui = ~0}},
-    {MODKEY|ShiftMask,                      XK_0,                     tag,                        {.ui = ~0}},
-    {MODKEY,                                XK_comma,                 focusmon,                   {.i = -1}},
-    {MODKEY,                                XK_period,                focusmon,                   {.i = +1}},
-    {MODKEY|ShiftMask,                      XK_comma,                 tagmon,                     {.i = -1}},
-    {MODKEY|ShiftMask,                      XK_period,                tagmon,                     {.i = +1}},
-    {MODKEY|Mod1Mask,                       XK_comma,                 followmon,                  {.i = -1}},
-    {MODKEY|Mod1Mask,                       XK_period,                followmon,                  {.i = +1}},
-    {MODKEY|ShiftMask|ControlMask|Mod1Mask, XK_period,                desktopset,                 {0}},
-    TAGKEYS(XK_1,                           0)
-    TAGKEYS(XK_2,                           1)
-    TAGKEYS(XK_3,                           2)
-    TAGKEYS(XK_4,                           3)
-    TAGKEYS(XK_5,                           4)
-    TAGKEYS(XK_6,                           5)
-    TAGKEYS(XK_7,                           6)
-    TAGKEYS(XK_8,                           7)
-    TAGKEYS(XK_9,                           8)
-    {MODKEY|ShiftMask|ControlMask,          XK_q,                     quit,                       {0}},
-    {MODKEY,                                XK_o,                     winview,                    {0}},
-
+Key okeys[] = {
+	/* modifier   key            function    argument */
+	{0,           XK_t,          focusstack, {.i = -1} },
+	{0,           XK_n,          focusstack, {.i = +1} },
+	{0,           XK_Escape,     lastview,   {0} },
+	{0,           XK_space,      winview,    {0} },
 };
 
 /* button definitions */
 /* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, or ClkRootWin */
 Button buttons[] = {
-    /* click          event mask          button   function                          argument */
-    {ClkLtSymbol,     0,                  Button1, cyclelayout,                      {.i = -1}},
-    {ClkLtSymbol,     0,                  Button3, cyclelayout,                      {.i = +1}},
-    {ClkLtSymbol,     MODKEY,             Button1, createoverlay,                    {0}},
-    {ClkLtSymbol,     0,                  Button2, setlayout,                        {.v = &layouts[0]}},
-    {ClkWinTitle,     0,                  Button1, window_title_mouse_handler,       {0}},
-    {ClkWinTitle,     MODKEY,             Button1, setoverlay,                       {0}},
-    {ClkWinTitle,     0,                  Button2, closewin,                         {0}},
-    {ClkCloseButton,  0,                  Button1, killclient,                       {0}},
-    {ClkCloseButton,  0,                  Button3, togglelocked,                     {0}},
-    {ClkResizeWidget, 0,                  Button1, drawwindow,                       {0}},
-    {ClkWinTitle,     0,                  Button3, window_title_mouse_handler_right, {0}},
-    {ClkWinTitle,     0,                  Button5, focusstack,                       {.i = +1}},
-    {ClkWinTitle,     0,                  Button4, focusstack,                       {.i = -1}},
-    {ClkWinTitle,     ShiftMask,          Button5, pushdown,                         {0}},
-    {ClkWinTitle,     ShiftMask,          Button4, pushup,                           {0}},
-    {ClkWinTitle,     ControlMask,        Button5, downscaleclient,                  {0}},
-    {ClkWinTitle,     ControlMask,        Button4, upscaleclient,                    {0}},
-    {ClkStatusText,   0,                  Button1, spawn,                            {.v = startmenucmd}},
-    {ClkStatusText,   0,                  Button2, spawn,                            {.v = termcmd}},
-    {ClkStatusText,   0,                  Button3, spawn,                            {.v = quickmenucmd}},
-    {ClkRootWin,      MODKEY,             Button1, setoverlay,                       {0}},
-    {ClkRootWin,      0,                  Button1, spawn,                            {.v = startmenucmd} },
-    {ClkRootWin,      0,                  Button3, spawn,                            {.v = termcmd} },
-    {ClkRootWin,      0,                  Button4, hideoverlay,                      {0} },
-    {ClkRootWin,      0,                  Button5, showoverlay,                      {0} },
-    {ClkClientWin,    MODKEY,             Button1, movemouse,                        {0}},
-    {ClkClientWin,    MODKEY,             Button2, toggle_floating,                  {0}},
-    {ClkClientWin,    MODKEY,             Button3, resizemouse,                      {0}},
-    {ClkClientWin,    MODKEY | Mod1Mask,  Button3, forceresizemouse,                 {0}},
-    {ClkClientWin,    MODKEY | ShiftMask, Button3, resizeaspectmouse,                {0}},
-    {ClkTagBar,       0,                  Button1, dragtag,                          {0}},
-    {ClkTagBar,       0,                  Button5, viewtoright,                      {0}},
-    {ClkTagBar,       MODKEY,             Button4, shiftview,                        {.i = -1}},
-    {ClkTagBar,       MODKEY,             Button5, shiftview,                        {.i = +1}},
-    {ClkTagBar,       0,                  Button4, viewtoleft,                       {0}},
-    {ClkTagBar,       0,                  Button3, toggleview,                       {0}},
-    {ClkTagBar,       MODKEY,             Button1, tag,                              {0}},
-    {ClkTagBar,       Mod1Mask,           Button1, followtag,                        {0}},
-    {ClkTagBar,       MODKEY,             Button3, toggletag,                        {0}},
-    {ClkSideBar,      0,                  Button1, gesturemouse,                     {0}},
-    {ClkShutDown,     0,                  Button1, spawn,                            {.v = instantshutdowncmd}},
-    {ClkShutDown,     0,                  Button3, spawn,                            {.v = slockcmd}},
-    {ClkStartMenu,    ShiftMask,          Button1, toggleprefix,                     {0}},
+    /* click          event mask        button   function                          argument */
+    {ClkLtSymbol,     0,                Button1, cyclelayout,                      {.ui = 0} },
+    {ClkLtSymbol,     0,                Button2, cyclelayout,                      {.ui = 2} },
+    {ClkLtSymbol,     0,                Button3, cyclelayout,                      {.ui = 1} },
+    {ClkLtSymbol,     0,                Button4, cyclelayout,                      {.ui = 3} },
+    {ClkLtSymbol,     0,                Button5, cyclelayout,                      {.ui = 4} },
+    {ClkLtSymbol,     MODKEY,           Button1, createoverlay,                    {0}},
+    {ClkLtSymbol,     0,                Button2, setlayout,                        {.v = &layouts[0]}},
+    {ClkWinTitle,     0,                Button1, window_title_mouse_handler,       {0}},
+    {ClkWinTitle,     MODKEY,           Button1, setoverlay,                       {0}},
+    {ClkWinTitle,     0,                Button2, closewin,                         {0}},
+    {ClkCloseButton,  0,                Button1, killclient,                       {0}},
+    {ClkCloseButton,  0,                Button3, togglelocked,                     {0}},
+    {ClkResizeWidget, 0,                Button1, drawwindow,                       {0}},
+    {ClkWinTitle,     0,                Button3, window_title_mouse_handler_right, {0}},
+    {ClkWinTitle,     0,                Button5, focusstack,                       {.i = +1}},
+    {ClkWinTitle,     0,                Button4, focusstack,                       {.i = -1}},
+    {ClkWinTitle,     ShiftMask,        Button5, pushdown,                         {0}},
+    {ClkWinTitle,     ShiftMask,        Button4, pushup,                           {0}},
+    {ClkWinTitle,     ControlMask,      Button5, downscaleclient,                  {0}},
+    {ClkWinTitle,     ControlMask,      Button4, upscaleclient,                    {0}},
+    {ClkStatusText,   0,                Button1, spawn,                            {.v = startmenucmd}},
+    {ClkStatusText,   0,                Button2, spawn,                            {.v = termcmd}},
+    {ClkStatusText,   0,                Button3, spawn,                            {.v = quickmenucmd}},
+    {ClkRootWin,      MODKEY,           Button1, setoverlay,                       {0}},
+    {ClkRootWin,      0,                Button1, spawn,                            {.v = startmenucmd} },
+    {ClkRootWin,      0,                Button3, spawn,                            {.v = termcmd} },
+    {ClkRootWin,      0,                Button4, hideoverlay,                      {0} },
+    {ClkRootWin,      0,                Button5, showoverlay,                      {0} },
+    {ClkClientWin,    MODKEY,           Button1, moveorplace,                      {0}},
+    {ClkClientWin,    MODKEY,           Button2, toggle_floating,                  {0}},
+    {ClkClientWin,    MODKEY,           Button3, resizeorfacts,                    {0}},
+    {ClkClientWin,    MODKEY|Mod1Mask,  Button3, forceresizemouse,                 {0}},
+    {ClkClientWin,    MODKEY|ShiftMask, Button3, resizeaspectmouse,                {0}},
+    {ClkTagBar,       0,                Button1, dragtag,                          {0}},
+    {ClkTagBar,       0,                Button5, viewtoright,                      {0}},
+    {ClkTagBar,       MODKEY,           Button4, shiftview,                        {.i = -1}},
+    {ClkTagBar,       MODKEY,           Button5, shiftview,                        {.i = +1}},
+    {ClkTagBar,       0,                Button4, viewtoleft,                       {0}},
+    {ClkTagBar,       0,                Button3, toggleview,                       {0}},
+    {ClkTagBar,       MODKEY,           Button1, tag,                              {0}},
+    {ClkTagBar,       Mod1Mask,         Button1, followtag,                        {0}},
+    {ClkTagBar,       MODKEY,           Button3, toggletag,                        {0}},
+    {ClkSideBar,      0,                Button1, gesturemouse,                     {0}},
+    {ClkShutDown,     0,                Button1, spawn,                            {.v = instantshutdowncmd}},
+    {ClkShutDown,     0,                Button3, spawn,                            {.v = slockcmd}},
+    {ClkStartMenu,    ShiftMask,        Button1, toggleprefix,                     {0}},
 };
+
+Button obuttons[] = {
+  /* click          event mask          button   function           argument */
+  { ClkClientWin,   0,                  Button1, winview,           {0} },
+  { ClkClientWin,   0,                  Button2, killclient,        {0} },
+  { ClkClientWin,   0,                  Button3, winview,           {.ui = 1} },
+  { ClkClientWin,   0,                  Button4, focusstack,        {.i = -1} },
+  { ClkClientWin,   0,                  Button5, focusstack,        {.i = +1} },
+	{ ClkRootWin,     0,                  Button4, focusstack,        {.i = -1} },
+	{ ClkRootWin,     0,                  Button5, focusstack,        {.i = +1} },
+};
+
 #endif
