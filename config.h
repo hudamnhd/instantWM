@@ -61,6 +61,7 @@ const Layout layouts[] = {
 	{ "O",        overviewlayout },
 	{ "TTT",      bstack },
 	{ "===",      bstackhoriz },
+	{ ">M>",      centeredfloatingmaster },
 	{ NULL,       NULL },
 };
 

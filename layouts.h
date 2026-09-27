@@ -12,6 +12,7 @@ void overviewlayout(Monitor *m);
 void tcl(Monitor *m);
 void tile(Monitor *m);
 void floatl(Monitor *m);
+void centeredfloatingmaster(Monitor *m);
 
 static inline void (*tiling_layout_func(Monitor *m))(Monitor *) {
     return m->lt[m->sellt]->arrange;
