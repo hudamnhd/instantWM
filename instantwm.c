@@ -209,6 +209,16 @@ void cleanup(void) {
     XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
 }
 
+void conditional(const Arg *arg) {
+    CondFuncPtr *conditional = (CondFuncPtr *)arg->v;
+    if (conditional->condition() && conditional->func_true != NULL) {
+        conditional->func_true(&(conditional->arg_true));
+        return;
+    } else if (conditional->func_false != NULL) {
+        conditional->func_false(&(conditional->arg_false));
+    }
+}
+
 void distributeclients(const Arg *arg) {
     Client *c;
     int tagcounter = 0;

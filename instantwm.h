@@ -366,6 +366,14 @@ typedef struct {
     int monitor;
 } Rule;
 
+typedef struct {
+  int (*condition)(void);
+  void (*func_true)(const Arg *arg);
+  void (*func_false)(const Arg *arg);
+  const Arg arg_true;
+  const Arg arg_false;
+} CondFuncPtr;
+
 /* Xresources preferences */
 enum resource_type { STRING = 0, INTEGER = 1, FLOAT = 2 };
 
@@ -445,6 +453,7 @@ void maprequest(XEvent *e);
 void motionnotify(XEvent *e);
 
 void moveresize(const Arg *arg);
+void conditional(const Arg *arg);
 void distributeclients(const Arg *arg);
 void keyresize(const Arg *arg);
 void center_window(const Arg *arg);
