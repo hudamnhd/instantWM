@@ -697,7 +697,7 @@ void toggle_fullscreen_overview(const Arg *arg) {
         winview(NULL);
     } else {
         selmon->lt[selmon->sellt] = selmon->pertag->ltidxs[0][selmon->sellt] =
-            (Layout *)&layouts[3];
+            (Layout *)&layouts[2];
         view(arg);
     }
 }

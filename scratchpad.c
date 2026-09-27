@@ -81,8 +81,10 @@ void scratchpad_make(const Arg *arg) {
         return;
 
     /* Don't allow duplicate names */
-    if (scratchpad_find(name))
+    if (scratchpad_find(name)) {
+        scratchpad_unmake(arg);
         return;
+    }
 
     Client *c = selmon->sel;
 
@@ -113,6 +115,9 @@ void scratchpad_unmake(const Arg *arg) {
 
     c->scratchpad_name[0] = '\0';
     c->issticky = 0;
+
+    if (c->isfloating)
+        toggle_floating(NULL);
 
     if (c->scratchpad_restore_tags)
         c->tags = c->scratchpad_restore_tags;
